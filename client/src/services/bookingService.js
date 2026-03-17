@@ -1,16 +1,21 @@
-/**
- * Booking Service
- * 
- * API Endpoints:
- * - GET /api/bookings
- * - GET /api/bookings/:id
- * - POST /api/bookings (create)
- * - PUT /api/bookings/:id (update status)
- * - DELETE /api/bookings/:id
- */
+import api from './api';
 
-// export const getMyBookings = () => api.get('/bookings/my');
-// export const getBookingById = (id) => api.get(`/bookings/${id}`);
-// export const createBooking = (bookingData) => api.post('/bookings', bookingData);
-// export const updateBookingStatus = (id, status) => api.put(`/bookings/${id}`, { status });
-// export const cancelBooking = (id) => api.delete(`/bookings/${id}`);
+export function getMyBookings() {
+  return api.get('/bookings').then((response) => response.data);
+}
+
+export function getBookingById(id) {
+  return api.get(`/bookings/${id}`).then((response) => response.data);
+}
+
+export function createBooking(bookingData) {
+  return api.post('/bookings', bookingData).then((response) => response.data);
+}
+
+export function updateBookingStatus(id, status) {
+  return api.put(`/bookings/${id}`, { status }).then((response) => response.data);
+}
+
+export function cancelBooking(id) {
+  return api.delete(`/bookings/${id}`).then((response) => response.data);
+}

@@ -1,26 +1,21 @@
-/**
- * User Routes - /api/users/*
- * 
- * GET    /:id             - Get user profile
- * GET    /:id/skills      - Get user's skills
- * GET    /:id/reviews     - Get user reviews
- * PUT    /:id             - Update profile (protected)
- * POST   /:id/avatar      - Upload avatar (protected)
- * 
- * Middleware:
- * - verifyFirebaseToken (for PUT, POST)
- */
+import express from 'express';
+import {
+  getUserProfile,
+  getUserReviews,
+  getUserSkills,
+  updateUserProfile,
+} from '../controllers/userController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
-// import express from 'express';
-// import { verifyFirebaseToken } from '../middleware/verifyFirebaseToken.js';
-//
-// const router = express.Router();
-//
-// router.get('/:id', getUserProfile);
-// router.get('/:id/skills', getUserSkills);
-// router.get('/:id/reviews', getUserReviews);
-//
-// router.put('/:id', verifyFirebaseToken, updateUserProfile);
-// router.post('/:id/avatar', verifyFirebaseToken, uploadAvatar);
-//
-// export default router;
+const router = express.Router();
+
+router.get('/me', protect, getUserProfile);
+router.put('/me', protect, updateUserProfile);
+router.get('/me/skills', protect, getUserSkills);
+router.get('/me/reviews', protect, getUserReviews);
+router.get('/:id', protect, getUserProfile);
+router.get('/:id/skills', getUserSkills);
+router.get('/:id/reviews', getUserReviews);
+router.put('/:id', protect, updateUserProfile);
+
+export default router;

@@ -1,34 +1,61 @@
-/**
- * Mongoose Schema: User
- * 
- * Fields:
- * - uid: Firebase UID (unique identifier)
- * - email: User email
- * - displayName: User's display name
- * - photoURL: Profile picture
- * - phone: Contact number
- * - bio: User bio
- * - skills: Array of skill references
- * - ratings: Aggregated ratings
- * - isVerified: Email verification status
- * - role: user | instructor | admin
- * - createdAt: Timestamp
- * - updatedAt: Timestamp
- */
+import bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
 
-// const userSchema = new Schema({
-//   uid: { type: String, unique: true, required: true },
-//   email: { type: String, unique: true, required: true },
-//   displayName: String,
-//   photoURL: String,
-//   phone: String,
-//   bio: String,
-//   skills: [{ type: Schema.Types.ObjectId, ref: 'Skill' }],
-//   ratings: { average: Number, count: Number },
-//   isVerified: { type: Boolean, default: false },
-//   role: { type: String, enum: ['user', 'instructor', 'admin'], default: 'user' },
-//   createdAt: { type: Date, default: Date.now },
-//   updatedAt: { type: Date, default: Date.now },
-// });
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 8,
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: ['provider', 'seeker', 'admin'],
+      default: 'seeker',
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    location: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
-// export default model('User', userSchema);
+userSchema.pre('save', async function savePassword(next) {
+  if (!this.isModified('password')) {
+    next();
+    return;
+  }
+
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
+const User = mongoose.model('User', userSchema);
+
+export default User;

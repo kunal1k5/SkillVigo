@@ -33,9 +33,7 @@ yarn-debug.log*
 # Uploads
 server/uploads/*
 !server/uploads/.gitkeep
-
-# Firebase
-*-firebase-adminsdk-*.json
+server/data/db.json
 
 # Optional: Sensitive files
 .env.production

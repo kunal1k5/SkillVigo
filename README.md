@@ -1,143 +1,81 @@
-# Skill Ecosystem Platform
+# SkillVigo
 
-A modern skill-sharing marketplace connecting learners and teachers in real-time.
+SkillVigo is a MERN-style skill marketplace app with custom JWT authentication.
 
-## 🏗️ Architecture
+## Stack
 
+- Frontend: React + Vite + Axios
+- Backend: Node.js + Express
+- Database: MongoDB + Mongoose
+- Auth: bcrypt password hashing + JWT
+- Real-time: Socket.IO
+
+## Auth Flow
+
+- Users register and login through `/api/auth/register` and `/api/auth/login`
+- Passwords are hashed with bcrypt before storage
+- JWT tokens expire in 7 days
+- The client stores the JWT in `localStorage`
+- Protected API calls send `Authorization: Bearer <token>`
+- Role-based access is enforced for `seeker`, `provider`, and `admin`
+
+## Backend Setup
+
+Create [server/.env](f:/SkillVigo/server/.env) from [server/.env.example](f:/SkillVigo/server/.env.example):
+
+```env
+PORT=5000
+CLIENT_URL=http://localhost:5173
+MONGODB_URI=mongodb://127.0.0.1:27017/skillvigo
+JWT_SECRET=replace-this-with-a-long-random-secret
 ```
-skill-ecosystem/
-├── client/           → React + Vite Frontend
-├── server/           → Node.js + Express Backend
-├── docs/             → API & Database Documentation
-└── Configuration files
-```
 
-## ✅ Tech Stack
-
-- **Frontend**: React 18 + Vite + React Router
-- **Backend**: Node.js + Express
-- **Authentication**: Firebase Auth
-- **Database**: MongoDB + Mongoose
-- **Real-time**: Socket.io
-- **Image Upload**: Multer + Cloudinary (optional)
-
-## 📋 Features
-
-- User Authentication (Email, Google, Facebook)
-- Skill Listings & Search
-- Booking System
-- Real-time Chat
-- Reviews & Ratings
-- Admin Panel
-- Profile Management
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js (v16+)
-- MongoDB (local or cloud)
-- Firebase Project
-- npm or yarn
-
-### Setup
-
-#### 1. Clone & Install
+Install and run:
 
 ```bash
-cd skill-ecosystem
-npm install --prefix client
-npm install --prefix server
-```
-
-#### 2. Configure Environment
-
-- Create `server/.env` with MongoDB URI and Firebase credentials
-- Create `client/.env.local` with Firebase config
-
-#### 3. Run Locally
-
-```bash
-# Terminal 1: Frontend
-cd client
-npm run dev
-
-# Terminal 2: Backend
 cd server
+npm install
 npm run dev
 ```
 
-## 📂 Project Structure
+## Frontend Setup
 
-### Client (`/client`)
-- **src/firebase**: Firebase configuration & auth providers
-- **src/context**: Global state (Auth)
-- **src/components**: UI components (layout, skills, booking, chat)
-- **src/pages**: Page templates
-- **src/services**: API calls via Axios
-- **src/hooks**: Custom React hooks
-- **src/routes**: React Router setup
+Create [client/.env](f:/SkillVigo/client/.env) from [client/.env.example](f:/SkillVigo/client/.env.example):
 
-### Server (`/server`)
-- **config**: MongoDB & Firebase Admin setup
-- **models**: Mongoose schemas
-- **controllers**: Business logic
-- **routes**: API endpoints
-- **middleware**: Auth verification, role-based access
-- **sockets**: Socket.io for real-time chat
-- **utils**: Helper functions
-
-## 🔐 Authentication Flow
-
-```
-User → Firebase Auth → ID Token → Backend Verification → MongoDB Session
+```env
+VITE_API_URL=/api
 ```
 
-1. **Client**: Login via Firebase
-2. **Backend**: Verify Firebase token in headers
-3. **Database**: Create/update user profile
-4. **Response**: Return user data & JWT
+Install and run:
 
-## 🗄️ Database Schema
-
-- **Users**: Profile, skills, ratings
-- **Skills**: Listings with descriptions, pricing
-- **Bookings**: Transactions & scheduling
-- **Reviews**: Ratings & feedback
-- **Messages**: Chat conversations
-
-## 🔗 API Integration
-
-All API calls flow through:
-```
-Frontend → Axios instance → Backend Express → MongoDB
+```bash
+cd client
+npm install
+npm run dev
 ```
 
-Headers include Firebase token for verification.
+## Demo Login
 
-## 📡 Real-time Features
+- Email: `demo@skillvigo.com`
+- Password: `Demo@123456`
 
-Socket.io handles:
-- Live chat messaging
-- Notification updates
-- Booking confirmations
+The server bootstraps this demo user so the seeded marketplace, booking, and chat flows keep working.
 
-## 📖 Documentation
+## Main API Routes
 
-See `/docs` folder for:
-- API Reference
-- Database Design
-- Deployment Guide
-- Contributing Guidelines
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/skills`
+- `POST /api/skills`
+- `GET /api/bookings`
+- `POST /api/bookings`
+- `GET /api/chat/conversations`
+- `POST /api/reviews`
+- `GET /api/admin/users`
 
-## 🎯 Next Steps
+## Notes
 
-1. Configure Firebase credentials
-2. Set up MongoDB connection
-3. Implement authentication
-4. Build API endpoints
-5. Connect frontend services
-6. Deploy to production
-
----
-
-**Ready for scaling** with microservices architecture support.
+- Legacy third-party auth code has been fully removed from the runtime codebase
+- Protected routes now rely on JWT middleware
+- Existing skill, booking, chat, review, and admin flows now use the authenticated Mongo user

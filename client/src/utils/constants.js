@@ -10,8 +10,8 @@
  */
 
 export const ROLES = {
-  USER: 'user',
-  INSTRUCTOR: 'instructor',
+  PROVIDER: 'provider',
+  SEEKER: 'seeker',
   ADMIN: 'admin',
 };
 

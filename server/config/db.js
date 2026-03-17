@@ -1,20 +1,21 @@
-/**
- * MongoDB Connection Configuration
- * 
- * Environment Variables Required:
- * - MONGODB_URI: Connection string
- * 
- * Mongoose Connection Features:
- * - Connection pooling
- * - Error handling
- * - Reconnection logic
- */
+import mongoose from 'mongoose';
 
-// mongoose.connect(process.env.MONGODB_URI, {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// })
-// .then(() => console.log('MongoDB connected'))
-// .catch(err => console.error('MongoDB connection failed:', err));
+export async function connectDB() {
+  const { MONGODB_URI } = process.env;
 
-// export default mongoose;
+  if (!MONGODB_URI) {
+    throw Object.assign(new Error('MONGODB_URI is required to start the server'), {
+      status: 500,
+    });
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  await mongoose.connect(MONGODB_URI);
+
+  console.log(`MongoDB connected: ${mongoose.connection.host}`);
+
+  return mongoose.connection;
+}

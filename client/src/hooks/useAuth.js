@@ -7,10 +7,13 @@
  * const { currentUser, login, logout } = useAuth();
  */
 
-// export default function useAuth() {
-//   const auth = useContext(AuthContext);
-//   if (!auth) {
-//     throw new Error('useAuth must be used within AuthProvider');
-//   }
-//   return auth;
-// }
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+
+export default function useAuth() {
+	const auth = useContext(AuthContext);
+	if (!auth) {
+		throw new Error('useAuth must be used within AuthProvider');
+	}
+	return auth;
+}

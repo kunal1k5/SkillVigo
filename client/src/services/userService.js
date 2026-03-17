@@ -1,13 +1,17 @@
-/**
- * User Service
- * 
- * API Endpoints:
- * - GET /api/users/:id
- * - GET /api/users/:id/profile
- * - PUT /api/users/:id/profile (update)
- * - POST /api/users/:id/avatar (upload)
- */
+import api from './api';
 
-// export const getUserProfile = (userId) => api.get(`/users/${userId}/profile`);
-// export const updateUserProfile = (userId, profileData) => api.put(`/users/${userId}/profile`, profileData);
-// export const uploadAvatar = (userId, file) => { /* multipart upload */ };
+export function getCurrentUserProfile() {
+  return api.get('/users/me').then((response) => response.data.user);
+}
+
+export function updateCurrentUserProfile(profileData) {
+  return api.put('/users/me', profileData).then((response) => response.data.user);
+}
+
+export function getUserSkills(userId) {
+  return api.get(`/users/${userId}/skills`).then((response) => response.data);
+}
+
+export function getUserReviews(userId) {
+  return api.get(`/users/${userId}/reviews`).then((response) => response.data);
+}

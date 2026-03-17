@@ -3,6 +3,16 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { connectDB } from './config/db.js';
+import { ensureDemoUser } from './utils/bootstrapDemoUser.js';
+import adminRoutes from './routes/adminRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import skillRoutes from './routes/skillRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { errorHandler } from './middleware/errorMiddleware.js';
 
 dotenv.config();
 
@@ -10,7 +20,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
   },
 });
@@ -28,29 +38,53 @@ const io = new Server(httpServer, {
  */
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes (to be implemented)
-// app.use('/api/auth', authRoutes);
-// app.use('/api/users', userRoutes);
-// app.use('/api/skills', skillRoutes);
-// app.use('/api/bookings', bookingRoutes);
-// app.use('/api/reviews', reviewRoutes);
-// app.use('/api/chat', chatRoutes);
-// app.use('/api/admin', adminRoutes);
-
-// Socket.io Connection Handler (to be implemented)
-io.on('connection', (socket) => {
-  // Socket events for real-time chat
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'SkillVigo API',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Error Handling (to be implemented)
+app.use('/api/auth', authRoutes);
+app.use('/api/skills', skillRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+
+io.on('connection', (socket) => {
+  socket.on('join-conversation', (conversationId) => {
+    socket.join(conversationId);
+  });
+});
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+async function startServer() {
+  await connectDB();
+  await ensureDemoUser();
+
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('Server failed to start', error);
+  process.exit(1);
 });
 
 export { app, io };

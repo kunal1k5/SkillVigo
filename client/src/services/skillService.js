@@ -1,16 +1,32 @@
-/**
- * Skill Service
- * 
- * API Endpoints:
- * - GET /api/skills
- * - GET /api/skills/:id
- * - POST /api/skills (create)
- * - PUT /api/skills/:id (update)
- * - DELETE /api/skills/:id
- */
+import api from './api';
 
-// export const getAllSkills = () => api.get('/skills');
-// export const getSkillById = (id) => api.get(`/skills/${id}`);
-// export const createSkill = (skillData) => api.post('/skills', skillData);
-// export const updateSkill = (id, skillData) => api.put(`/skills/${id}`, skillData);
-// export const deleteSkill = (id) => api.delete(`/skills/${id}`);
+function toPayload(skillData = {}) {
+  return {
+    ...skillData,
+    imageFileName: skillData.imageFileName || '',
+  };
+}
+
+export function getAllSkills(params = {}) {
+  return api.get('/skills', { params }).then((response) => response.data);
+}
+
+export function searchSkills(params = {}) {
+  return api.get('/skills/search', { params }).then((response) => response.data);
+}
+
+export function getSkillById(id) {
+  return api.get(`/skills/${id}`).then((response) => response.data);
+}
+
+export function createSkill(skillData) {
+  return api.post('/skills', toPayload(skillData)).then((response) => response.data);
+}
+
+export function updateSkill(id, skillData) {
+  return api.put(`/skills/${id}`, toPayload(skillData)).then((response) => response.data);
+}
+
+export function deleteSkill(id) {
+  return api.delete(`/skills/${id}`).then((response) => response.data);
+}
