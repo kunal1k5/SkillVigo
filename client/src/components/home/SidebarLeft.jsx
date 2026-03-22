@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import SkillSection from './SkillSection';
 
 function getInitials(name = '') {
   const parts = name
@@ -14,7 +15,7 @@ function getInitials(name = '') {
   return parts.map((part) => part[0]?.toUpperCase() || '').join('');
 }
 
-export default function SidebarLeft({ user, stats }) {
+export default function SidebarLeft({ user, stats, skills, onAddSkill }) {
   return (
     <aside className="space-y-6">
       <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-soft backdrop-blur">
@@ -43,6 +44,8 @@ export default function SidebarLeft({ user, stats }) {
           </div>
         </div>
       </div>
+
+      <SkillSection skills={skills} onAddSkill={onAddSkill} />
 
       <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-soft backdrop-blur">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Navigation</p>

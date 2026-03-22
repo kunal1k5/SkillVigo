@@ -10,7 +10,7 @@ import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Profile from '../pages/Profile';
 import Register from '../pages/Register';
-import Search from '../pages/Search';
+import SearchPage from '../pages/SearchPage';
 
 function NotFound() {
   return (
@@ -25,7 +25,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/search" element={<Search />} />
+      <Route path="/search" element={<SearchPage />} />
       
       {/* Moved temp routes out for viewing */}
       <Route path="/dashboard" element={<Dashboard />} />

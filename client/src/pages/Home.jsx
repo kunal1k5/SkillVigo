@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer } from 'react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import PageContainer from '../components/layout/PageContainer';
@@ -6,72 +6,142 @@ import useAuth from '../hooks/useAuth';
 import HomeFeed from '../components/home/HomeFeed';
 import SidebarLeft from '../components/home/SidebarLeft';
 import SidebarRight from '../components/home/SidebarRight';
-import { fetchHomeFeed } from '../components/home/homeData';
-import { buildUserProfile } from '../components/home/homeHelpers';
+import {
+  defaultFeedPosts,
+  defaultSkills,
+  homeStats,
+  suggestedProfiles,
+  trendingSkills,
+} from '../components/home/homeData';
+import {
+  buildUserProfile,
+  createComment,
+  createPost,
+  getStoredHomeState,
+  saveHomeState,
+  toggleLikeOnPost,
+} from '../components/home/homeHelpers';
+
+function createInitialHomeState() {
+  return getStoredHomeState({
+    defaultPosts: defaultFeedPosts,
+    defaultSkills,
+  });
+}
+
+function homeReducer(state, action) {
+  switch (action.type) {
+    case 'create_post':
+      return {
+        ...state,
+        posts: [action.payload, ...state.posts],
+      };
+    case 'add_skill':
+      return {
+        ...state,
+        skills: action.payload,
+      };
+    case 'toggle_like':
+      return {
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === action.payload.postId ? toggleLikeOnPost(post, action.payload.userId) : post,
+        ),
+      };
+    case 'add_comment':
+      return {
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === action.payload.postId
+            ? { ...post, comments: [...post.comments, action.payload.comment] }
+            : post,
+        ),
+      };
+    default:
+      return state;
+  }
+}
 
 export default function Home() {
   const { currentUser } = useAuth();
-  const [posts, setPosts] = useState([]);
-  const [stats, setStats] = useState({ skills: 0, bookings: 0, rating: 0 });
-  const [suggestions, setSuggestions] = useState([]);
-  const [trending, setTrending] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const user = useMemo(() => buildUserProfile(currentUser), [currentUser]);
+  const [homeState, dispatch] = useReducer(homeReducer, undefined, createInitialHomeState);
 
   useEffect(() => {
-    let active = true;
+    saveHomeState(homeState);
+  }, [homeState]);
 
-    const loadFeed = async () => {
-      setLoading(true);
-      setError('');
+  const stats = useMemo(
+    () => ({
+      ...homeStats,
+      skills: homeState.skills.length,
+    }),
+    [homeState.skills.length],
+  );
 
-      try {
-        const response = await fetchHomeFeed();
+  const handlePost = ({ text, image }) => {
+    dispatch({
+      type: 'create_post',
+      payload: createPost({
+        user,
+        text,
+        image,
+      }),
+    });
+  };
 
-        if (!active) {
-          return;
-        }
+  const handleAddSkill = (skillName) => {
+    const trimmedSkill = skillName.trim();
 
-        setPosts(response.posts);
-        setStats(response.stats);
-        setSuggestions(response.suggestions);
-        setTrending(response.trending);
-      } catch (fetchError) {
-        if (active) {
-          setError(fetchError?.message || 'Unable to load the feed right now.');
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
+    if (!trimmedSkill) {
+      return false;
+    }
 
-    loadFeed();
+    const skillAlreadyExists = homeState.skills.some(
+      (skill) => skill.toLowerCase() === trimmedSkill.toLowerCase(),
+    );
 
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (skillAlreadyExists) {
+      return false;
+    }
 
-  const user = useMemo(() => buildUserProfile(currentUser), [currentUser]);
+    dispatch({
+      type: 'add_skill',
+      payload: [trimmedSkill, ...homeState.skills],
+    });
 
-  const handlePost = (message) => {
-    const newPost = {
-      id: `post-${Date.now()}`,
-      author: {
-        name: user.name,
-        role: user.role,
-        avatar: '',
+    return true;
+  };
+
+  const handleToggleLike = (postId) => {
+    dispatch({
+      type: 'toggle_like',
+      payload: {
+        postId,
+        userId: user.id,
       },
-      time: 'Just now',
-      content: message,
-      image: '',
-      likes: 0,
-      comments: [],
-    };
+    });
+  };
 
-    setPosts((prev) => [newPost, ...prev]);
+  const handleAddComment = (postId, text) => {
+    const trimmedText = text.trim();
+
+    if (!trimmedText) {
+      return false;
+    }
+
+    dispatch({
+      type: 'add_comment',
+      payload: {
+        postId,
+        comment: createComment({
+          user,
+          text: trimmedText,
+        }),
+      },
+    });
+
+    return true;
   };
 
   return (
@@ -79,21 +149,27 @@ export default function Home() {
       <Navbar />
       <main className="min-h-screen bg-transparent pb-16 pt-6">
         <PageContainer className="space-y-6">
-          {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-              {error}
-            </div>
-          ) : null}
-
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr_300px]">
             <div className="lg:sticky lg:top-24 lg:self-start">
-              <SidebarLeft user={user} stats={stats} />
+              <SidebarLeft
+                user={user}
+                stats={stats}
+                skills={homeState.skills}
+                onAddSkill={handleAddSkill}
+              />
             </div>
 
-            <HomeFeed user={user} loading={loading} posts={posts} onPost={handlePost} />
+            <HomeFeed
+              user={user}
+              posts={homeState.posts}
+              currentUserId={user.id}
+              onPost={handlePost}
+              onToggleLike={handleToggleLike}
+              onAddComment={handleAddComment}
+            />
 
             <div className="lg:sticky lg:top-24 lg:self-start">
-              <SidebarRight suggestions={suggestions} trending={trending} />
+              <SidebarRight suggestions={suggestedProfiles} trending={trendingSkills} />
             </div>
           </section>
         </PageContainer>

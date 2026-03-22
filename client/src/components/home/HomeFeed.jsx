@@ -1,17 +1,16 @@
-import CreatePost from './CreatePost';
-import FeedSkeleton from './FeedSkeleton';
-import PostCard from './PostCard';
+import PostForm from './PostForm';
+import PostList from './PostList';
 
-export default function HomeFeed({ user, loading, posts, onPost }) {
+export default function HomeFeed({ user, posts, currentUserId, onPost, onToggleLike, onAddComment }) {
   return (
     <section className="space-y-5">
-      <CreatePost user={user} onPost={onPost} />
-
-      {loading ? (
-        <FeedSkeleton />
-      ) : (
-        posts.map((post) => <PostCard key={post.id} post={post} />)
-      )}
+      <PostForm user={user} onPost={onPost} />
+      <PostList
+        posts={posts}
+        currentUserId={currentUserId}
+        onToggleLike={onToggleLike}
+        onAddComment={onAddComment}
+      />
     </section>
   );
 }
