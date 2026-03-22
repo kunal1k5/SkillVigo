@@ -1,95 +1,187 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import Navbar from '../components/layout/Navbar';
+import useAuth from '../hooks/useAuth';
+import { getDefaultRouteForRole } from '../utils/authRedirect';
 
-// Proper Icons Collection
+const ROLE_OPTIONS = [
+  {
+    value: 'seeker',
+    title: 'Hire talent',
+    description: 'Find trusted local providers, tutors, and specialists with less back-and-forth.',
+  },
+  {
+    value: 'provider',
+    title: 'Offer services',
+    description: 'Create your presence, attract clients, and manage work from one place.',
+  },
+];
+
+const TRUST_POINTS = [
+  'A faster setup with only the details you actually need.',
+  'Clear role selection so the experience fits how you use the platform.',
+  'A calmer form layout that stays easy to scan on mobile and desktop.',
+];
+
 const Icons = {
-  User: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Mail: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
-  Lock: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
-  Phone: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
-  MapPin: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Skill: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
+  user: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 19a8 8 0 0 1 16 0" />
+    </svg>
+  ),
+  mail: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5 10.94 13a1.8 1.8 0 0 0 2.12 0L21 7.5" />
+      <rect width="18" height="14" x="3" y="5" rx="3" />
+    </svg>
+  ),
+  phone: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 5.5A1.5 1.5 0 0 1 5.5 4h2.38a1.5 1.5 0 0 1 1.43 1.06l.87 2.89a1.5 1.5 0 0 1-.69 1.73l-1.7.94a13.2 13.2 0 0 0 5.57 5.57l.94-1.7a1.5 1.5 0 0 1 1.73-.69l2.89.87A1.5 1.5 0 0 1 20 16.12v2.38A1.5 1.5 0 0 1 18.5 20h-.75C10.16 20 4 13.84 4 6.25V5.5Z"
+      />
+    </svg>
+  ),
+  mapPin: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.33 7-11a7 7 0 1 0-14 0c0 5.67 7 11 7 11Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  ),
+  skill: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 4.75h9l3 3v8.5l-3 3h-9l-3-3v-8.5l3-3Z" />
+    </svg>
+  ),
+  lock: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 10V8a5 5 0 1 1 10 0v2" />
+      <rect width="14" height="11" x="5" y="10" rx="3" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 14v3" />
+    </svg>
+  ),
 };
 
-// Guaranteed Fix: Input Field Component using pure Flex Layout (no absolute positioning overlap bugs)
-const InputField = ({ label, name, type = 'text', value, onChange, placeholder, required, icon }) => (
-  <div className="flex flex-col gap-2 w-full">
-    <label className="text-sm font-semibold text-gray-700" htmlFor={name}>
-      {label} {required && <span className="text-blue-500">*</span>}
-    </label>
-    <div className="group flex items-center w-full border border-gray-300 rounded-xl bg-gray-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all overflow-hidden h-[60px]">
-      {icon && (
-        <span className="flex items-center justify-center pl-4 pr-3 pb-0.5 text-gray-400 group-focus-within:text-blue-500 transition-colors transform -translate-y-0.5">
-          {icon}
-        </span>
-      )}
-      <input
-        id={name}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className={`flex-1 h-full bg-transparent border-none outline-none text-gray-900 text-lg placeholder-gray-400 focus:placeholder-transparent focus:ring-0 ${
-          icon ? 'pl-2 pr-4' : 'px-4'
-        }`}
-      />
-    </div>
-  </div>
-);
-
-// Sexy Role Selection Cards
-const RoleSelector = ({ selectedRole, onChange }) => {
+function InputField({ label, name, type = 'text', value, onChange, placeholder, required, icon }) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center px-1">
-        <label className="text-lg font-semibold text-gray-800">
-          How do you want to use SkillVigo? <span className="text-blue-500">*</span>
-        </label>
-        <span className="text-sm font-medium bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow-sm">
-          Selected: {selectedRole === 'provider' ? 'Earn Money' : 'Hire Talent'}
-        </span>
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-slate-700">
+        {label}
+        {required ? <span className="ml-1 text-emerald-600">*</span> : null}
+      </span>
+      <div className="group flex h-14 items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-emerald-300 focus-within:bg-emerald-50/40 focus-within:shadow-md">
+        {icon ? (
+          <span className="mr-3 text-slate-400 transition-colors group-focus-within:text-emerald-600">
+            {icon}
+          </span>
+        ) : null}
+        <input
+          id={name}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          className="h-full flex-1 border-none bg-transparent text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+        />
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Provider Card */}
-        <div 
-          onClick={() => onChange('provider')}
-          className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
-            selectedRole === 'provider' 
-              ? 'border-blue-600 bg-blue-50 shadow-md transform scale-[1.02]' 
-              : 'border-transparent bg-white shadow hover:shadow-md hover:border-blue-200'
-          }`}
-        >
-          <div className="text-4xl mb-2">💼</div>
-          <h3 className="font-bold text-gray-900 text-lg">Earn Money</h3>
-          <p className="text-sm text-gray-500 mt-1">Offer your skills and get clients</p>
-        </div>
+    </label>
+  );
+}
 
-        {/* Seeker Card */}
-        <div 
-          onClick={() => onChange('seeker')}
-          className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
-            selectedRole === 'seeker' 
-              ? 'border-blue-600 bg-blue-50 shadow-md transform scale-[1.02]' 
-              : 'border-transparent bg-white shadow hover:shadow-md hover:border-blue-200'
-          }`}
-        >
-          <div className="text-4xl mb-2">🔍</div>
-          <h3 className="font-bold text-gray-900 text-lg">Hire Talent</h3>
-          <p className="text-sm text-gray-500 mt-1">Find tutors and services near you</p>
-        </div>
-      </div>
+function RoleSelector({ selectedRole, onChange }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {ROLE_OPTIONS.map((option) => {
+        const selected = option.value === selectedRole;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            className={`rounded-[26px] border p-5 text-left transition ${
+              selected
+                ? 'border-emerald-300 bg-emerald-50 shadow-md shadow-emerald-100/60'
+                : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-base font-semibold text-slate-900">{option.title}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{option.description}</p>
+              </div>
+              <span
+                className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                  selected ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-transparent'
+                }`}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4 4L19 7" />
+                </svg>
+              </span>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
-};
+}
+
+function SidePanel() {
+  return (
+    <section className="relative overflow-hidden rounded-[32px] border border-emerald-200/60 bg-[linear-gradient(180deg,#f0fdf4_0%,#ffffff_100%)] px-7 py-8 shadow-soft sm:px-9 sm:py-10">
+      <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+      <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-teal-100 blur-3xl" />
+
+      <div className="relative flex h-full flex-col gap-7">
+        <div className="space-y-4">
+          <span className="inline-flex w-fit rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700 shadow-sm">
+            Create account
+          </span>
+          <div className="space-y-3">
+            <h1 className="max-w-sm font-display text-3xl font-bold leading-tight text-slate-900 sm:text-4xl">
+              Join SkillVigo with a cleaner start.
+            </h1>
+            <p className="max-w-md text-sm leading-7 text-slate-600 sm:text-base">
+              Set up your profile once and move straight into finding opportunities or connecting with trusted local talent.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {TRUST_POINTS.map((item) => (
+            <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+              <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4 4L19 7" />
+                </svg>
+              </span>
+              <p className="text-sm leading-6 text-slate-600">{item}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-[28px] border border-emerald-100 bg-slate-900 px-5 py-5 text-slate-50 shadow-lg shadow-slate-900/10">
+          <p className="text-sm font-semibold text-white">What happens next</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            After signup, we will take you directly to the right experience for your role so you can get started immediately.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  
+  const { register, authBusy } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -97,26 +189,31 @@ export default function RegisterPage() {
     confirmPassword: '',
     phone: '',
     location: '',
-    role: 'seeker', 
-    primarySkill: ''
+    role: 'seeker',
+    primarySkill: '',
   });
-
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const passwordsMatch = formData.confirmPassword === '' || formData.password === formData.confirmPassword;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const passwordsMatch =
+    formData.confirmPassword === '' || formData.password === formData.confirmPassword;
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((currentData) => ({
+      ...currentData,
+      [name]: value,
+    }));
   };
 
   const handleRoleChange = (role) => {
-    setFormData(prev => ({ ...prev, role }));
+    setFormData((currentData) => ({
+      ...currentData,
+      role,
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
 
     if (!passwordsMatch) {
@@ -124,195 +221,171 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
-    setLoading(true);
-
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Dummy Registration payload:', formData);
-      navigate('/login');
-    } catch (err) {
-      setError('Failed to register. Please try again.');
-    } finally {
-      setLoading(false);
+      const user = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        phone: formData.phone,
+        location: formData.location,
+      });
+
+      navigate(getDefaultRouteForRole(user.role), { replace: true });
+    } catch (requestError) {
+      setError(requestError.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#f0fdf4_36%,#f8fafc_100%)] font-sans text-slate-900">
       <Navbar />
 
-      <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 pt-8 sm:pt-12 pb-16">
-        
-        {/* CENTERED CONTAINER FIX (max-w-4xl mx-auto) */}
-        <div className="max-w-4xl mx-auto">
-          
-          {/* Header Typography */}
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
-              Create Your Account
-            </h1>
-            <p className="text-gray-500 font-medium text-lg">
-              Join SkillVigo and start your journey today.
-            </p>
-          </div>
+      <main className="px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+          <SidePanel />
 
-          {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center gap-3">
-              <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            
-            {/* STEP 1: Role Selection Wrapper Separated */}
-            <RoleSelector selectedRole={formData.role} onChange={handleRoleChange} />
-
-            {/* STEP 2: The Core Form Details properly isolated inside a premium white Card */}
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-100">
-              
-              <h2 className="text-xl font-semibold mb-6 text-gray-800 border-b border-gray-100 pb-3">
-                Personal Details
-              </h2>
-              
-              {/* Proper Spacing space-y-5 */}
-              <div className="space-y-5">
-                
-                {/* 2-Column Grid Wrapper */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputField 
-                    label="Full Name" 
-                    name="name" 
-                    icon={Icons.User}
-                    value={formData.name} 
-                    onChange={handleChange} 
-                    placeholder="John Doe" 
-                    required 
-                  />
-                  <InputField 
-                    label="Email Address" 
-                    name="email" 
-                    type="email" 
-                    icon={Icons.Mail}
-                    value={formData.email} 
-                    onChange={handleChange} 
-                    placeholder="hello@example.com" 
-                    required 
-                  />
-                </div>
-
-                {/* Conditional Primary Skill (Takes full width logically or half if wrapped) */}
-                {formData.role === 'provider' && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <InputField 
-                      label="Primary Skill" 
-                      name="primarySkill" 
-                      icon={Icons.Skill}
-                      value={formData.primarySkill} 
-                      onChange={handleChange} 
-                      placeholder="e.g. Graphic Designer, Plumber, Tutor" 
-                      required={formData.role === 'provider'}
-                    />
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputField 
-                    label="Phone Number" 
-                    name="phone" 
-                    type="tel" 
-                    icon={Icons.Phone}
-                    value={formData.phone} 
-                    onChange={handleChange} 
-                    placeholder="(555) 123-4567" 
-                    required 
-                  />
-                  <InputField 
-                    label="Location (City)" 
-                    name="location" 
-                    icon={Icons.MapPin}
-                    value={formData.location} 
-                    onChange={handleChange} 
-                    placeholder="New York, NY" 
-                    required 
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <InputField 
-                      label="Password" 
-                      name="password" 
-                      type="password" 
-                      icon={Icons.Lock}
-                      value={formData.password} 
-                      onChange={handleChange} 
-                      placeholder="••••••••" 
-                      required 
-                    />
-                  </div>
-                  <div className="relative">
-                    <InputField 
-                      label="Confirm Password" 
-                      name="confirmPassword" 
-                      type="password" 
-                      icon={Icons.Lock}
-                      value={formData.confirmPassword} 
-                      onChange={handleChange} 
-                      placeholder="••••••••" 
-                      required 
-                    />
-                    {!passwordsMatch && (
-                      <span className="absolute -bottom-5 left-1 text-red-500 text-xs font-semibold flex items-center gap-1 animate-in fade-in">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                        Passwords do not match
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Button Improvement section */}
-                <div className="pt-6">
-                  <button 
-                    type="submit" 
-                    disabled={loading || !passwordsMatch}
-                    className={`w-full py-3 rounded-2xl text-white font-semibold shadow-md transition-all flex items-center justify-center gap-2 ${
-                      (loading || !passwordsMatch)
-                        ? 'bg-gray-300 cursor-not-allowed shadow-none' 
-                        : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-lg hover:-translate-y-0.5'
-                    }`}
-                  >
-                    {loading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        Creating Account...
-                      </>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </button>
-                </div>
-
-              </div>
-              
-              <div className="mt-8 text-center pt-6 border-t border-gray-100">
-                <span className="text-gray-500 font-medium text-sm">
-                  Already have an account?{' '}
-                  <Link to="/login" className="text-blue-600 font-bold hover:text-blue-800 transition-colors">
-                    Log in
-                  </Link>
-                </span>
-              </div>
-              
+          <section className="rounded-[32px] border border-white/70 bg-white/92 p-6 shadow-soft backdrop-blur sm:p-8">
+            <div className="space-y-2">
+              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.26em] text-emerald-700">
+                Join SkillVigo
+              </span>
+              <h2 className="font-display text-3xl font-bold text-slate-900">Create your account</h2>
+              <p className="text-sm leading-6 text-slate-500 sm:text-base">
+                Share a few details so we can shape the experience around how you plan to use the platform.
+              </p>
             </div>
 
-          </form>
+            {error ? (
+              <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                <svg className="mt-0.5 h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-10a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Zm0 7a1.25 1.25 0 1 0 0-2.5A1.25 1.25 0 0 0 10 15Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{error}</span>
+              </div>
+            ) : null}
 
+            <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Choose your role</p>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
+                    {formData.role}
+                  </span>
+                </div>
+                <RoleSelector selectedRole={formData.role} onChange={handleRoleChange} />
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <InputField
+                  label="Full name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="John Doe"
+                  required
+                  icon={Icons.user}
+                />
+                <InputField
+                  label="Email address"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="name@example.com"
+                  required
+                  icon={Icons.mail}
+                />
+              </div>
+
+              {formData.role === 'provider' ? (
+                <InputField
+                  label="Primary skill"
+                  name="primarySkill"
+                  value={formData.primarySkill}
+                  onChange={handleChange}
+                  placeholder="Tutor, electrician, designer, coach..."
+                  icon={Icons.skill}
+                />
+              ) : null}
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <InputField
+                  label="Phone number"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="(555) 123-4567"
+                  required
+                  icon={Icons.phone}
+                />
+                <InputField
+                  label="Location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="New York, NY"
+                  required
+                  icon={Icons.mapPin}
+                />
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <InputField
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="At least 8 characters"
+                  required
+                  icon={Icons.lock}
+                />
+                <div className="space-y-2">
+                  <InputField
+                    label="Confirm password"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Repeat your password"
+                    required
+                    icon={Icons.lock}
+                  />
+                  {!passwordsMatch ? (
+                    <p className="text-sm font-medium text-rose-600">Passwords do not match yet.</p>
+                  ) : (
+                    <p className="text-sm text-slate-400">Use a strong password with at least 8 characters.</p>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={authBusy || !passwordsMatch}
+                className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-slate-900 px-5 text-base font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              >
+                {authBusy ? 'Creating your account...' : 'Create account'}
+              </button>
+            </form>
+
+            <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+              Already have an account?{' '}
+              <Link to="/login" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
+                Sign in
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
 

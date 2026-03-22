@@ -19,16 +19,14 @@ export default function Navbar() {
   const lastScrollYRef = useRef(0);
   const [isVisible, setIsVisible] = useState(true);
 
-  const navLinkStyle = ({ isActive }) => ({
-    color: isActive ? '#0f172a' : '#5b6b82',
-    textDecoration: 'none',
-    fontWeight: isActive ? 800 : 700,
-    fontSize: '14px',
-    padding: '8px 10px',
-    borderBottom: isActive ? '2px solid #1d4ed8' : '2px solid transparent',
-    transition: 'color 0.18s ease, border-color 0.18s ease',
-    whiteSpace: 'nowrap',
-  });
+  const navLinkClassName = ({ isActive }) =>
+    [
+      'rounded-full px-4 py-2 text-sm font-bold no-underline transition-all duration-200',
+      'focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2',
+      isActive
+        ? 'bg-emerald-50 text-slate-900 shadow-[0_0_0_1px_rgba(16,185,129,0.18),0_0_22px_rgba(16,185,129,0.22)]'
+        : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.14),0_0_18px_rgba(16,185,129,0.18)]',
+    ].join(' ');
 
   const handleLogout = () => {
     logout();
@@ -127,13 +125,13 @@ export default function Navbar() {
               }}
             >
               {MAIN_LINKS.map((item) => (
-                <NavLink key={item.to} to={item.to} style={navLinkStyle}>
+                <NavLink key={item.to} to={item.to} className={navLinkClassName}>
                   {item.label}
                 </NavLink>
               ))}
 
               {!loading && currentUser?.role === 'admin' ? (
-                <NavLink to="/admin" style={navLinkStyle}>
+                <NavLink to="/admin" className={navLinkClassName}>
                   Admin
                 </NavLink>
               ) : null}
@@ -155,8 +153,22 @@ export default function Navbar() {
                       textDecoration: 'none',
                       color: '#475569',
                       fontWeight: 700,
-                      padding: '8px 10px',
+                      padding: '8px 14px',
+                      borderRadius: '999px',
+                      transition: 'all 0.2s ease',
                       whiteSpace: 'nowrap',
+                      boxShadow: '0 0 0 1px rgba(16, 185, 129, 0)',
+                    }}
+                    onMouseEnter={(event) => {
+                      event.currentTarget.style.background = '#ffffff';
+                      event.currentTarget.style.color = '#0f172a';
+                      event.currentTarget.style.boxShadow =
+                        '0 0 0 1px rgba(16, 185, 129, 0.12), 0 0 18px rgba(16, 185, 129, 0.16)';
+                    }}
+                    onMouseLeave={(event) => {
+                      event.currentTarget.style.background = 'transparent';
+                      event.currentTarget.style.color = '#475569';
+                      event.currentTarget.style.boxShadow = '0 0 0 1px rgba(16, 185, 129, 0)';
                     }}
                   >
                     {currentUser.name}
@@ -173,8 +185,22 @@ export default function Navbar() {
                       textDecoration: 'none',
                       color: '#475569',
                       fontWeight: 700,
-                      padding: '8px 10px',
+                      padding: '8px 14px',
+                      borderRadius: '999px',
+                      transition: 'all 0.2s ease',
                       whiteSpace: 'nowrap',
+                      boxShadow: '0 0 0 1px rgba(16, 185, 129, 0)',
+                    }}
+                    onMouseEnter={(event) => {
+                      event.currentTarget.style.background = '#ffffff';
+                      event.currentTarget.style.color = '#0f172a';
+                      event.currentTarget.style.boxShadow =
+                        '0 0 0 1px rgba(16, 185, 129, 0.12), 0 0 18px rgba(16, 185, 129, 0.16)';
+                    }}
+                    onMouseLeave={(event) => {
+                      event.currentTarget.style.background = 'transparent';
+                      event.currentTarget.style.color = '#475569';
+                      event.currentTarget.style.boxShadow = '0 0 0 1px rgba(16, 185, 129, 0)';
                     }}
                   >
                     Login
@@ -188,7 +214,20 @@ export default function Navbar() {
                       padding: '10px 16px',
                       borderRadius: '999px',
                       background: 'linear-gradient(90deg, #1d4ed8 0%, #0f766e 100%)',
+                      boxShadow: '0 10px 24px rgba(15, 118, 110, 0.22)',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease',
                       whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={(event) => {
+                      event.currentTarget.style.transform = 'translateY(-1px)';
+                      event.currentTarget.style.filter = 'brightness(1.03)';
+                      event.currentTarget.style.boxShadow =
+                        '0 0 0 1px rgba(45, 212, 191, 0.18), 0 0 22px rgba(16, 185, 129, 0.28)';
+                    }}
+                    onMouseLeave={(event) => {
+                      event.currentTarget.style.transform = 'translateY(0)';
+                      event.currentTarget.style.filter = 'brightness(1)';
+                      event.currentTarget.style.boxShadow = '0 10px 24px rgba(15, 118, 110, 0.22)';
                     }}
                   >
                     Register
