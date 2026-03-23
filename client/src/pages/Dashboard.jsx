@@ -1,90 +1,162 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import PageContainer from '../components/layout/PageContainer';
 import useAuth from '../hooks/useAuth';
 
-// --- DUMMY DATA ---
 const STUB_DATA = {
   provider: {
     stats: [
-      { id: 1, title: 'Total Earnings', value: '₹45,200', icon: '💰' },
-      { id: 2, title: 'Total Bookings', value: '124', icon: '📅' },
-      { id: 3, title: 'Active Services', value: '4', icon: '🚀' },
-      { id: 4, title: 'Rating', value: '4.8', icon: '⭐' },
+      { id: 1, title: 'Total Earnings', value: 'Rs 45,200', icon: 'RS' },
+      { id: 2, title: 'Total Bookings', value: '124', icon: 'BK' },
+      { id: 3, title: 'Active Services', value: '4', icon: 'SV' },
+      { id: 4, title: 'Rating', value: '4.8', icon: 'RT' },
     ],
     skills: [
-      { id: 1, name: 'Advanced React Development', price: '₹1500/hr', active: true },
-      { id: 2, name: 'UI/UX Design Mentorship', price: '₹1200/hr', active: true },
-      { id: 3, name: 'Node.js Backend Setup', price: '₹2000/hr', active: false },
+      { id: 1, name: 'Advanced React Development', price: 'Rs 1500/hr', active: true },
+      { id: 2, name: 'UI/UX Design Mentorship', price: 'Rs 1200/hr', active: true },
+      { id: 3, name: 'Node.js Backend Setup', price: 'Rs 2000/hr', active: false },
+    ],
+    bookings: [
+      { id: 1, client: 'Rahul Verma', service: 'React Mentorship', date: '24 Mar, 2026', status: 'Upcoming' },
+      { id: 2, client: 'Neha Sharma', service: 'UI Review Session', date: '20 Mar, 2026', status: 'Completed' },
+      { id: 3, client: 'Amit Kumar', service: 'Backend Setup Call', date: '18 Mar, 2026', status: 'Completed' },
+      { id: 4, client: 'Pooja Singh', service: 'Portfolio Feedback', date: '16 Mar, 2026', status: 'Cancelled' },
     ],
     activities: [
       { id: 1, message: 'New booking from Rahul for React Development', time: '2 hours ago' },
       { id: 2, message: 'You received a 5-star review', time: '1 day ago' },
-      { id: 3, message: 'Payment of ₹3000 deposited', time: '2 days ago' },
-    ]
+      { id: 3, message: 'Payment of Rs 3000 deposited', time: '2 days ago' },
+    ],
+    conversations: [
+      {
+        id: '1',
+        name: 'Rahul Verma',
+        role: 'Student',
+        lastMessage: 'Can we start at 5 PM today?',
+        time: '10:30 AM',
+        messages: [
+          { id: 1, sender: 'them', text: 'Hi, I booked a React mentorship session.' },
+          { id: 2, sender: 'me', text: 'Great, I have your booking on my dashboard.' },
+          { id: 3, sender: 'them', text: 'Can we start at 5 PM today?' },
+        ],
+      },
+      {
+        id: '2',
+        name: 'Neha Sharma',
+        role: 'Founder',
+        lastMessage: 'Thanks for the quick feedback.',
+        time: 'Yesterday',
+        messages: [
+          { id: 1, sender: 'me', text: 'I shared the design review notes.' },
+          { id: 2, sender: 'them', text: 'Thanks for the quick feedback.' },
+        ],
+      },
+    ],
   },
   seeker: {
     stats: [
-      { id: 1, title: 'Skills Learned', value: '12', icon: '🎯' },
-      { id: 2, title: 'Total Bookings', value: '24', icon: '📅' },
-      { id: 3, title: 'Active Sessions', value: '2', icon: '🚀' },
-      { id: 4, title: 'Given Reviews', value: '18', icon: '⭐' },
+      { id: 1, title: 'Skills Learned', value: '12', icon: 'SK' },
+      { id: 2, title: 'Total Bookings', value: '24', icon: 'BK' },
+      { id: 3, title: 'Active Sessions', value: '2', icon: 'AC' },
+      { id: 4, title: 'Given Reviews', value: '18', icon: 'RV' },
     ],
     bookings: [
-      { id: 1, provider: 'Kunal Singh', service: 'React Mentorship', date: '24 Oct, 2026', status: 'Upcoming' },
-      { id: 2, provider: 'Neha Sharma', service: 'UI/UX Design', date: '20 Oct, 2026', status: 'Completed' },
-      { id: 3, provider: 'Amit Kumar', service: 'Backend Node.js', date: '15 Oct, 2026', status: 'Completed' },
+      { id: 1, client: 'Kunal Singh', service: 'React Mentorship', date: '24 Mar, 2026', status: 'Upcoming' },
+      { id: 2, client: 'Neha Sharma', service: 'UI/UX Design', date: '20 Mar, 2026', status: 'Completed' },
+      { id: 3, client: 'Amit Kumar', service: 'Backend Node.js', date: '15 Mar, 2026', status: 'Completed' },
+      { id: 4, client: 'Riya Patel', service: 'Interview Coaching', date: '10 Mar, 2026', status: 'Upcoming' },
     ],
     activities: [
       { id: 1, message: 'Reminder: Session with Kunal at 4 PM', time: '1 hour ago' },
       { id: 2, message: 'Neha approved your booking request', time: '5 hours ago' },
       { id: 3, message: 'You left a 5-star review for Amit', time: '1 week ago' },
-    ]
-  }
+    ],
+    conversations: [
+      {
+        id: '1',
+        name: 'Kunal Singh',
+        role: 'React Mentor',
+        lastMessage: 'Please share the topics you want to cover.',
+        time: '09:45 AM',
+        messages: [
+          { id: 1, sender: 'me', text: 'I booked a React mentorship slot for tomorrow.' },
+          { id: 2, sender: 'them', text: 'Please share the topics you want to cover.' },
+        ],
+      },
+      {
+        id: '2',
+        name: 'Neha Sharma',
+        role: 'UI/UX Designer',
+        lastMessage: 'The latest mockups are ready.',
+        time: 'Yesterday',
+        messages: [
+          { id: 1, sender: 'them', text: 'The latest mockups are ready.' },
+          { id: 2, sender: 'me', text: 'I will review them before our next session.' },
+        ],
+      },
+    ],
+  },
 };
 
-// --- COMPONENTS ---
+const NAV_ITEMS = {
+  dashboard: { label: 'Dashboard', icon: 'DB' },
+  skills: { label: 'My Skills', icon: 'SK' },
+  bookings: { label: 'Bookings', icon: 'BK' },
+  messages: { label: 'Messages', icon: 'MS' },
+  settings: { label: 'Settings', icon: 'ST' },
+};
 
-const Sidebar = ({ user, activeNav, setActiveNav }) => {
-  const isProvider = user?.role === 'provider';
-  
+function getInitials(name = '') {
+  return (
+    name
+      .split(' ')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('') || 'SV'
+  );
+}
+
+function Sidebar({ user, activeNav, setActiveNav, isProvider }) {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    ...(isProvider ? [{ id: 'skills', label: 'My Skills', icon: '🛠️' }] : []),
-    { id: 'bookings', label: 'Bookings', icon: '📅' },
-    { id: 'messages', label: 'Messages', icon: '✉️' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'dashboard', ...NAV_ITEMS.dashboard },
+    ...(isProvider ? [{ id: 'skills', ...NAV_ITEMS.skills }] : []),
+    { id: 'bookings', ...NAV_ITEMS.bookings },
+    { id: 'messages', ...NAV_ITEMS.messages },
+    { id: 'settings', ...NAV_ITEMS.settings },
   ];
 
   return (
     <aside className="w-full md:w-64 flex-shrink-0">
       <div className="sticky top-24 flex flex-col gap-6">
-        {/* Profile Card */}
         <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 flex flex-col items-center text-center">
           <div className="h-20 w-20 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold mb-4">
-            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            {getInitials(user?.name)}
           </div>
           <h2 className="text-xl font-bold text-slate-800">{user?.name || 'User'}</h2>
           <span className="text-sm font-semibold text-blue-600 uppercase tracking-wider mt-1 bg-blue-50 px-3 py-1 rounded-full">
-            {user?.role || 'Seeker'}
+            {user?.role || 'seeker'}
           </span>
         </div>
 
-        {/* Navigation Menu */}
         <nav className="bg-white rounded-2xl p-4 shadow-md border border-slate-100 flex flex-col gap-2">
           {navItems.map((item) => (
             <button
               key={item.id}
+              type="button"
               onClick={() => setActiveNav(item.id)}
               className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left font-medium transition-colors ${
-                activeNav === item.id 
-                  ? 'bg-blue-50 text-blue-700' 
+                activeNav === item.id
+                  ? 'bg-blue-50 text-blue-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold">
+                {item.icon}
+              </span>
               {item.label}
             </button>
           ))}
@@ -92,116 +164,458 @@ const Sidebar = ({ user, activeNav, setActiveNav }) => {
       </div>
     </aside>
   );
-};
+}
 
-const StatsCard = ({ title, value, icon }) => (
-  <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-lg">
-    <div className="h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center text-2xl shrink-0">
-      {icon}
+function SectionHeader({ title, description, action }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{title}</h1>
+        <p className="mt-2 text-slate-500">{description}</p>
+      </div>
+      {action}
     </div>
-    <div>
-      <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{title}</p>
-      <h3 className="text-2xl font-bold text-slate-800 mt-1">{value}</h3>
-    </div>
-  </div>
-);
+  );
+}
 
-const SkillList = ({ skills }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
-    <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-      <h2 className="text-lg font-bold text-slate-800">My Skills</h2>
-      <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors">
-        + Add New
-      </button>
+function StatsCard({ title, value, icon }) {
+  return (
+    <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-lg">
+      <div className="h-14 w-14 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-sm font-bold shrink-0">
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{title}</p>
+        <h3 className="text-2xl font-bold text-slate-800 mt-1">{value}</h3>
+      </div>
     </div>
-    <div className="divide-y divide-slate-100 p-2">
-      {skills.map((skill) => (
-        <div key={skill.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl hover:bg-slate-50 transition-colors">
-          <div className="flex flex-col gap-1">
-            <h3 className="font-semibold text-slate-800">{skill.name}</h3>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="font-medium text-slate-600">{skill.price}</span>
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${skill.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
-                {skill.active ? 'Active' : 'Draft'}
+  );
+}
+
+function SkillList({ skills }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <h2 className="text-lg font-bold text-slate-800">My Skills</h2>
+        <Link
+          to="/create-skill"
+          className="text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors"
+        >
+          + Add New
+        </Link>
+      </div>
+      <div className="divide-y divide-slate-100 p-2">
+        {skills.map((skill) => (
+          <div
+            key={skill.id}
+            className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex flex-col gap-1">
+              <h3 className="font-semibold text-slate-800">{skill.name}</h3>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-medium text-slate-600">{skill.price}</span>
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                    skill.active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
+                  }`}
+                >
+                  {skill.active ? 'Active' : 'Draft'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BookingList({ bookings, title = 'Recent Bookings', role }) {
+  const personLabel = role === 'provider' ? 'Client' : 'Provider';
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+      </div>
+      <div className="divide-y divide-slate-100 p-2">
+        {bookings.map((booking) => (
+          <div
+            key={booking.id}
+            className="p-4 flex flex-col gap-4 rounded-xl hover:bg-slate-50 transition-colors sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
+                {booking.client.charAt(0)}
+              </div>
+              <div className="flex flex-col">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  {personLabel}
+                </p>
+                <h3 className="font-semibold text-slate-800">{booking.client}</h3>
+                <p className="text-sm text-slate-500">{booking.service}</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <span className="text-sm font-medium text-slate-700">{booking.date}</span>
+              <span
+                className={`w-fit px-2 py-1 rounded text-xs font-semibold ${
+                  booking.status === 'Completed'
+                    ? 'bg-green-100 text-green-700'
+                    : booking.status === 'Cancelled'
+                      ? 'bg-rose-100 text-rose-700'
+                      : 'bg-blue-100 text-blue-700'
+                }`}
+              >
+                {booking.status}
               </span>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors">Edit</button>
-            <button className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">Delete</button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+}
 
-const BookingList = ({ bookings }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
-    <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-      <h2 className="text-lg font-bold text-slate-800">Recent Bookings</h2>
-    </div>
-    <div className="divide-y divide-slate-100 p-2">
-      {bookings.map((booking) => (
-        <div key={booking.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl hover:bg-slate-50 transition-colors">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
-              {booking.provider.charAt(0)}
-            </div>
-            <div className="flex flex-col">
-              <h3 className="font-semibold text-slate-800">{booking.provider}</h3>
-              <p className="text-sm text-slate-500">{booking.service}</p>
+function ActivityFeed({ activities }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
+      </div>
+      <div className="divide-y divide-slate-100 p-4">
+        {activities.map((activity) => (
+          <div key={activity.id} className="py-4 first:pt-2 last:pb-2 flex gap-4 items-start">
+            <div className="mt-1 h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-slate-800">{activity.message}</p>
+              <span className="text-xs text-slate-500">{activity.time}</span>
             </div>
           </div>
-          <div className="flex flex-col sm:items-end gap-2">
-            <span className="text-sm font-medium text-slate-700">{booking.date}</span>
-            <span className={`w-fit px-2 py-1 rounded text-xs font-semibold ${
-              booking.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-            }`}>
-              {booking.status}
-            </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MessageCenter({ conversations }) {
+  const [activeId, setActiveId] = useState(conversations[0]?.id || '');
+  const activeConversation = conversations.find((conversation) => conversation.id === activeId) || conversations[0];
+
+  useEffect(() => {
+    if (!activeId && conversations[0]?.id) {
+      setActiveId(conversations[0].id);
+    }
+  }, [activeId, conversations]);
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
+      <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <h2 className="text-lg font-bold text-slate-900">Recent Messages</h2>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {conversations.map((conversation) => (
+            <button
+              key={conversation.id}
+              type="button"
+              onClick={() => setActiveId(conversation.id)}
+              className={`flex w-full items-start gap-3 px-5 py-4 text-left transition ${
+                conversation.id === activeConversation?.id ? 'bg-blue-50' : 'hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 font-bold text-slate-700">
+                {conversation.name.charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate font-semibold text-slate-900">{conversation.name}</p>
+                  <span className="text-xs text-slate-400">{conversation.time}</span>
+                </div>
+                <p className="text-xs font-medium text-blue-600">{conversation.role}</p>
+                <p className="mt-1 truncate text-sm text-slate-500">{conversation.lastMessage}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="border-t border-slate-100 px-5 py-4">
+          <Link to="/chat" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+            Open full chat page
+          </Link>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
+        {activeConversation ? (
+          <>
+            <div className="border-b border-slate-100 px-6 py-5 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{activeConversation.name}</h2>
+                <p className="text-sm text-blue-600">{activeConversation.role}</p>
+              </div>
+              <Link
+                to="/chat"
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Reply in Chat
+              </Link>
+            </div>
+            <div className="space-y-4 bg-slate-50 p-6">
+              {activeConversation.messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-xl rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                      message.sender === 'me'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-slate-800 border border-slate-100'
+                    }`}
+                  >
+                    {message.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="p-8 text-slate-500">No messages yet.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SettingsPanel({ currentUser, formData, onChange, onSubmit, saveMessage }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-slate-900">Account Settings</h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Update the profile details that appear around your SkillVigo account.
+        </p>
+      </div>
+
+      <form onSubmit={onSubmit} className="grid gap-5 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Full Name</span>
+          <input
+            name="name"
+            value={formData.name}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Email</span>
+          <input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Phone</span>
+          <input
+            name="phone"
+            value={formData.phone}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Location</span>
+          <input
+            name="location"
+            value={formData.location}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+          />
+        </label>
+
+        <label className="md:col-span-2 flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Bio</span>
+          <textarea
+            name="bio"
+            rows={4}
+            value={formData.bio}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+          />
+        </label>
+
+        <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-slate-500">
+            Signed in as <span className="font-semibold text-slate-700">{currentUser?.role || 'seeker'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {saveMessage ? <span className="text-sm font-medium text-green-600">{saveMessage}</span> : null}
+            <button
+              type="submit"
+              className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Save Settings
+            </button>
           </div>
         </div>
-      ))}
+      </form>
     </div>
-  </div>
-);
+  );
+}
 
-const ActivityFeed = ({ activities }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
-    <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-      <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
-    </div>
-    <div className="divide-y divide-slate-100 p-4">
-      {activities.map((activity) => (
-        <div key={activity.id} className="py-4 first:pt-2 last:pb-2 flex gap-4 items-start">
-          <div className="mt-1 h-2 w-2 rounded-full bg-blue-500 shrink-0"></div>
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium text-slate-800">{activity.message}</p>
-            <span className="text-xs text-slate-500">{activity.time}</span>
-          </div>
+function DashboardOverview({ currentUser, data, role }) {
+  return (
+    <>
+      <SectionHeader
+        title={`Welcome back, ${currentUser?.name ? currentUser.name.split(' ')[0] : 'User'}!`}
+        description="Here is a quick summary of what is happening with your account today."
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {data.stats.map((stat) => (
+          <StatsCard key={stat.id} title={stat.title} value={stat.value} icon={stat.icon} />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2">
+          {role === 'provider' ? (
+            <SkillList skills={data.skills} />
+          ) : (
+            <BookingList bookings={data.bookings.slice(0, 3)} role={role} />
+          )}
         </div>
-      ))}
-    </div>
-  </div>
-);
-
-// --- MAIN DASHBOARD PAGE ---
+        <div className="xl:col-span-1">
+          <ActivityFeed activities={data.activities} />
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
   const [activeNav, setActiveNav] = useState('dashboard');
   const [loading, setLoading] = useState(true);
+  const [saveMessage, setSaveMessage] = useState('');
 
-  // Determine user role (fallback to seeker if undefined)
   const role = currentUser?.role === 'provider' ? 'provider' : 'seeker';
   const data = STUB_DATA[role];
+  const isProvider = role === 'provider';
+
+  const [settingsForm, setSettingsForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: '',
+  });
 
   useEffect(() => {
-    // Simulate loading state
-    const timer = setTimeout(() => setLoading(false), 600);
+    const timer = setTimeout(() => setLoading(false), 400);
     return () => clearTimeout(timer);
   }, [role]);
+
+  useEffect(() => {
+    setSettingsForm({
+      name: currentUser?.name || '',
+      email: currentUser?.email || '',
+      phone: currentUser?.phone || '',
+      location: currentUser?.location || '',
+      bio: currentUser?.bio || '',
+    });
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (activeNav === 'skills' && !isProvider) {
+      setActiveNav('dashboard');
+    }
+  }, [activeNav, isProvider]);
+
+  const sectionMeta = useMemo(() => {
+    const sectionTitles = {
+      dashboard: {
+        title: 'Dashboard',
+        description: 'Your overview with stats, activity, and quick actions.',
+      },
+      skills: {
+        title: 'My Skills',
+        description: 'Manage the services and skills listed on your account.',
+      },
+      bookings: {
+        title: 'Bookings',
+        description: 'View all of your recent and upcoming bookings in one place.',
+      },
+      messages: {
+        title: 'Messages',
+        description: 'Open your recent conversations and jump into chat quickly.',
+      },
+      settings: {
+        title: 'Settings',
+        description: 'Adjust the profile details and contact information for your account.',
+      },
+    };
+
+    return sectionTitles[activeNav] || sectionTitles.dashboard;
+  }, [activeNav]);
+
+  const handleSettingsChange = (event) => {
+    const { name, value } = event.target;
+    setSettingsForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+    setSaveMessage('');
+  };
+
+  const handleSettingsSubmit = (event) => {
+    event.preventDefault();
+    setSaveMessage('Settings updated successfully.');
+  };
+
+  const renderActiveSection = () => {
+    switch (activeNav) {
+      case 'skills':
+        return <SkillList skills={data.skills || []} />;
+      case 'bookings':
+        return <BookingList bookings={data.bookings} role={role} title="All Recent Bookings" />;
+      case 'messages':
+        return <MessageCenter conversations={data.conversations} />;
+      case 'settings':
+        return (
+          <SettingsPanel
+            currentUser={currentUser}
+            formData={settingsForm}
+            onChange={handleSettingsChange}
+            onSubmit={handleSettingsSubmit}
+            saveMessage={saveMessage}
+          />
+        );
+      case 'dashboard':
+      default:
+        return <DashboardOverview currentUser={currentUser} data={data} role={role} />;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -209,48 +623,24 @@ export default function Dashboard() {
 
       <PageContainer className="flex-1 py-8">
         <div className="flex flex-col md:flex-row gap-8">
-          
-          {/* LEFT SIDEBAR */}
-          <Sidebar user={currentUser} activeNav={activeNav} setActiveNav={setActiveNav} />
-          
-          {/* RIGHT MAIN CONTENT */}
+          <Sidebar
+            user={currentUser}
+            activeNav={activeNav}
+            setActiveNav={setActiveNav}
+            isProvider={isProvider}
+          />
+
           <main className="flex-1 flex flex-col gap-8 min-w-0">
             {loading ? (
               <div className="flex h-64 items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
               </div>
+            ) : activeNav === 'dashboard' ? (
+              renderActiveSection()
             ) : (
               <>
-                {/* Header Welcome */}
-                <div>
-                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Welcome back, {currentUser?.name ? currentUser.name.split(' ')[0] : 'User'}! 👋
-                  </h1>
-                  <p className="text-slate-500 mt-2">Here's what's happening with your account today.</p>
-                </div>
-
-                {/* Top Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {data.stats.map(stat => (
-                    <StatsCard key={stat.id} title={stat.title} value={stat.value} icon={stat.icon} />
-                  ))}
-                </div>
-
-                {/* Middle Section: Role-based Content */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-2">
-                    {role === 'provider' ? (
-                      <SkillList skills={data.skills} />
-                    ) : (
-                      <BookingList bookings={data.bookings} />
-                    )}
-                  </div>
-                  
-                  {/* Bottom/Side Section: Activity */}
-                  <div className="lg:col-span-1">
-                    <ActivityFeed activities={data.activities} />
-                  </div>
-                </div>
+                <SectionHeader title={sectionMeta.title} description={sectionMeta.description} />
+                {renderActiveSection()}
               </>
             )}
           </main>

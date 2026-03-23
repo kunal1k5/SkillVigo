@@ -19,15 +19,21 @@ export default function SidebarLeft({ user, stats, skills, onAddSkill }) {
   return (
     <aside className="space-y-6">
       <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-soft backdrop-blur">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 via-blue-700 to-teal-600 text-sm font-bold text-white">
+        <Link
+          to="/profile"
+          className="group flex items-center gap-4 rounded-2xl transition hover:bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          aria-label={`Open ${user.name} profile details`}
+        >
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 via-blue-700 to-teal-600 text-sm font-bold text-white transition group-hover:scale-[1.03]">
             {getInitials(user.name)}
           </div>
           <div>
-            <p className="text-lg font-semibold text-slate-900">{user.name}</p>
+            <p className="text-lg font-semibold text-slate-900 transition group-hover:text-blue-700">
+              {user.name}
+            </p>
             <p className="text-sm text-slate-500">{user.role}</p>
           </div>
-        </div>
+        </Link>
 
         <div className="mt-5 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-xl bg-slate-50 p-3">

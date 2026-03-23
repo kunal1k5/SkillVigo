@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import useAuth from '../hooks/useAuth';
@@ -33,7 +34,8 @@ const MOCK_PROFILE = {
     email: 'sarah.j.consulting@example.com',
     website: 'https://sarahjenkins.dev',
     joined: 'March 2021'
-  }
+  },
+  showSkillsSection: true,
 };
 
 // COMPONENTS
@@ -91,19 +93,28 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 pt-2">
           {isOwnProfile ? (
-            <button className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
+            <Link
+              to="/profile/edit"
+              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+            >
               Edit Profile
-            </button>
+            </Link>
           ) : (
             <>
               {profile.role === 'provider' && (
-                <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">
+                <Link
+                  to="/bookings"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                >
                   Book Now
-                </button>
+                </Link>
               )}
-              <button className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-200 focus:ring-offset-2">
+              <Link
+                to="/chat"
+                className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-200 focus:ring-offset-2"
+              >
                 Message
-              </button>
+              </Link>
             </>
           )}
         </div>
@@ -147,9 +158,9 @@ const SkillCard = ({ skill }) => (
       <span className="text-sm font-medium text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md">
         {skill.experience}
       </span>
-      <button className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-        Book Session ?
-      </button>
+      <Link to="/bookings" className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+        Book Session
+      </Link>
     </div>
   </div>
 );
@@ -175,23 +186,89 @@ const ReviewCard = ({ review }) => (
   </div>
 );
 
+function normalizeRoleLabel(role = '') {
+  if (!role) {
+    return 'member';
+  }
+
+  return role.replace(/_/g, ' ').trim();
+}
+
+function buildProfileFromUser(currentUser) {
+  if (!currentUser) {
+    return MOCK_PROFILE;
+  }
+
+  const normalizedRole = normalizeRoleLabel(currentUser.role).toLowerCase();
+  const isProvider = normalizedRole === 'provider';
+  const firstName = (currentUser.name || 'Member').split(' ')[0];
+  const reviews = Array.isArray(currentUser.reviews) ? currentUser.reviews : [];
+  const skills = Array.isArray(currentUser.skills)
+    ? currentUser.skills.map((skill, index) => ({
+        id: skill.id || skill._id || index + 1,
+        title: skill.title || skill.name || 'Untitled skill',
+        price: skill.price || skill.rate || '/session',
+        experience: skill.experience || 'Available',
+      }))
+    : [];
+
+  return {
+    id: currentUser.id || currentUser._id || 'current-user',
+    name: currentUser.name || 'SkillVigo member',
+    role: normalizedRole || 'member',
+    location: currentUser.location || 'Location not added yet',
+    isVerified: Boolean(currentUser.isVerified),
+    rating:
+      typeof currentUser.rating === 'number'
+        ? currentUser.rating
+        : typeof currentUser.averageRating === 'number'
+          ? currentUser.averageRating
+          : 0,
+    bio:
+      currentUser.bio ||
+      `This is ${firstName}'s SkillVigo profile. Add a short bio to help people understand your background and strengths.`,
+    stats: {
+      totalBookings: currentUser.totalBookings || currentUser.bookingCount || 0,
+      totalSkills: currentUser.totalSkills || skills.length,
+      experience: currentUser.experience || 'Just getting started',
+      activeClients: currentUser.activeClients || 0,
+    },
+    skills,
+    reviews,
+    about: {
+      description:
+        currentUser.about ||
+        currentUser.bio ||
+        `Welcome to ${firstName}'s profile. More detailed profile information can be added here over time.`,
+      email: currentUser.email || 'Not shared yet',
+      website: currentUser.website || '',
+      joined: currentUser.createdAt
+        ? new Intl.DateTimeFormat('en-US', {
+            month: 'long',
+            year: 'numeric',
+          }).format(new Date(currentUser.createdAt))
+        : 'Recently joined',
+    },
+    phone: currentUser.phone || '',
+    showSkillsSection: isProvider,
+  };
+}
+
 export default function Profile() {
   const { currentUser } = useAuth();
-  
-  // For demonstration, we use the MOCK_PROFILE. 
-  // In reality, we might fetch this based on URL params to decide if it's our profile or someone else's.
-  // We'll treat it as our profile if currentUser exists just to show the Edit button logic, 
-  // or default to viewing a provider's profile.
-  const isOwnProfile = false; // Toggle this to true to see "Edit Profile"
-  const profile = MOCK_PROFILE;
-
-  const [activeTab, setActiveTab] = useState('skills');
+  const isOwnProfile = Boolean(currentUser);
+  const profile = useMemo(() => buildProfileFromUser(currentUser), [currentUser]);
+  const [activeTab, setActiveTab] = useState(profile.showSkillsSection ? 'skills' : 'reviews');
 
   const tabs = [
-    ...(profile.role === 'provider' ? [{ id: 'skills', label: 'Skills' }] : []),
+    ...(profile.showSkillsSection ? [{ id: 'skills', label: 'Skills' }] : []),
     { id: 'reviews', label: 'Reviews' },
     { id: 'about', label: 'About' }
   ];
+
+  useEffect(() => {
+    setActiveTab(profile.showSkillsSection ? 'skills' : 'reviews');
+  }, [profile.showSkillsSection]);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col">
@@ -203,7 +280,7 @@ export default function Profile() {
         <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
 
         {/* Stats Section */}
-        {profile.role === 'provider' && (
+        {profile.showSkillsSection && (
           <StatsSection stats={profile.stats} />
         )}
 
@@ -228,7 +305,7 @@ export default function Profile() {
         {/* Tabs Content */}
         <div className="min-h-[300px]">
           {/* SKILLS TAB */}
-          {activeTab === 'skills' && profile.role === 'provider' && (
+          {activeTab === 'skills' && profile.showSkillsSection && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {profile.skills.map(skill => (
                 <SkillCard key={skill.id} skill={skill} />
@@ -268,15 +345,23 @@ export default function Profile() {
               <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
                 <div>
                   <div className="text-sm font-medium text-slate-400 mb-1">Contact Email</div>
-                  <a href={"mailto:" + profile.about.email} className="text-slate-900 font-medium hover:text-blue-600 transition-colors">
-                    {profile.about.email}
-                  </a>
+                  {profile.about.email && profile.about.email !== 'Not shared yet' ? (
+                    <a href={"mailto:" + profile.about.email} className="text-slate-900 font-medium hover:text-blue-600 transition-colors">
+                      {profile.about.email}
+                    </a>
+                  ) : (
+                    <div className="text-slate-500 font-medium">Not shared yet</div>
+                  )}
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-400 mb-1">Website</div>
-                  <a href={profile.about.website} target="_blank" rel="noopener noreferrer" className="text-slate-900 font-medium hover:text-blue-600 transition-colors">
-                    {profile.about.website.replace('https://', '')}
-                  </a>
+                  {profile.about.website ? (
+                    <a href={profile.about.website} target="_blank" rel="noopener noreferrer" className="text-slate-900 font-medium hover:text-blue-600 transition-colors">
+                      {profile.about.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  ) : (
+                    <div className="text-slate-500 font-medium">Not added yet</div>
+                  )}
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-400 mb-1">Member Since</div>
@@ -284,6 +369,12 @@ export default function Profile() {
                     {profile.about.joined}
                   </div>
                 </div>
+                {profile.phone ? (
+                  <div>
+                    <div className="text-sm font-medium text-slate-400 mb-1">Phone</div>
+                    <div className="text-slate-900 font-medium">{profile.phone}</div>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
