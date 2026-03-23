@@ -6,7 +6,7 @@ import useAuth from '../hooks/useAuth';
 import { getDefaultRouteForRole } from '../utils/authRedirect';
 
 const DEMO_CREDENTIALS = {
-  email: 'demo@skillvigo.com',
+  email: 'demo@skillvigo.in',
   password: 'Demo@123456',
 };
 
@@ -182,7 +182,7 @@ export default function Login() {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="name@example.com"
+                placeholder="aarav.sharma@example.in"
                 required
                 icon={Icons.mail}
               />

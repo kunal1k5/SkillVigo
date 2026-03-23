@@ -291,7 +291,7 @@ export default function RegisterPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="John Doe"
+                  placeholder="Aarav Sharma"
                   required
                   icon={Icons.user}
                 />
@@ -301,7 +301,7 @@ export default function RegisterPage() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="name@example.com"
+                  placeholder="aarav.sharma@example.in"
                   required
                   icon={Icons.mail}
                 />
@@ -325,7 +325,7 @@ export default function RegisterPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="(555) 123-4567"
+                  placeholder="+91 98765 43210"
                   required
                   icon={Icons.phone}
                 />
@@ -334,7 +334,7 @@ export default function RegisterPage() {
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="New York, NY"
+                  placeholder="Pune, Maharashtra"
                   required
                   icon={Icons.mapPin}
                 />

@@ -7,12 +7,12 @@ import useAuth from '../hooks/useAuth';
 // STUB DATA for demonstration
 const MOCK_PROFILE = {
   id: 'user_123',
-  name: 'Sarah Jenkins',
+  name: 'Ananya Sharma',
   role: 'provider',
-  location: 'San Francisco, CA',
+  location: 'Bengaluru, Karnataka',
   isVerified: true,
   rating: 4.8,
-  bio: 'Senior Full-Stack Developer & Technical Consultant. Passionate about teaching modern web technologies and helping businesses scale their infrastructure.',
+  bio: 'Senior Full-Stack Developer and Technical Consultant. Passionate about teaching modern web technologies and helping businesses scale their digital infrastructure.',
   stats: {
     totalBookings: 124,
     totalSkills: 6,
@@ -25,14 +25,14 @@ const MOCK_PROFILE = {
     { id: 3, title: 'WebRTC Video Streaming', price: '/hr', experience: 'Advanced' }
   ],
   reviews: [
-    { id: 1, reviewer: 'Alex M.', rating: 5, comment: 'Sarah is an incredible mentor. Fixed my architecture bugs in one session!' },
-    { id: 2, reviewer: 'Priya K.', rating: 5, comment: 'Very professional and deep knowledge of React internals.' },
-    { id: 3, reviewer: 'David L.', rating: 4, comment: 'Great session, but we went over time a bit. Still highly recommended.' }
+    { id: 1, reviewer: 'Rohit M.', rating: 5, comment: 'Ananya is an incredible mentor. She fixed my architecture issues in one session.' },
+    { id: 2, reviewer: 'Priya K.', rating: 5, comment: 'Very professional and has deep knowledge of React internals.' },
+    { id: 3, reviewer: 'Devansh L.', rating: 4, comment: 'Great session, and the guidance was practical and easy to follow.' }
   ],
   about: {
-    description: 'I am a software engineer with over 8 years of experience building scalable web applications. I specialize in the React/Node.js ecosystem and cloud infrastructure. When I am not coding, I am usually hiking or mentoring junior developers natively and internationally.',
-    email: 'sarah.j.consulting@example.com',
-    website: 'https://sarahjenkins.dev',
+    description: 'I am a software engineer with over 8 years of experience building scalable web applications. I specialize in the React and Node.js ecosystem, cloud infrastructure, and product mentoring for startups and growing teams across India.',
+    email: 'ananya.sharma@example.in',
+    website: 'https://ananyasharma.dev',
     joined: 'March 2021'
   },
   showSkillsSection: true,
