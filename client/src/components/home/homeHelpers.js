@@ -88,7 +88,7 @@ function getPersistentUserId(currentUser) {
 export function buildUserProfile(currentUser) {
   return {
     id: getPersistentUserId(currentUser),
-    name: currentUser?.name || 'Guest Explorer',
+    name: currentUser?.name || 'Guest',
     role: currentUser?.role ? `${currentUser.role} account` : 'SkillVigo member',
     avatar: currentUser?.avatar || '',
   };
