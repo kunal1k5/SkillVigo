@@ -24,7 +24,7 @@ export default function SidebarLeft({ user, stats, skills, onAddSkill }) {
           className="group flex items-center gap-4 rounded-2xl transition hover:bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           aria-label={`Open ${user.name} profile details`}
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 via-blue-700 to-teal-600 text-sm font-bold text-white transition group-hover:scale-[1.03]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 via-blue-700 to-teal-600 text-sm font-bold text-white transition group-hover:scale-[1.03]">
             {getInitials(user.name)}
           </div>
           <div>

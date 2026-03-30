@@ -112,7 +112,7 @@ export default function Navbar() {
                 style={{
                   width: '42px',
                   height: '42px',
-                  borderRadius: '14px',
+                  borderRadius: '999px',
                   background: isBrandHovered
                     ? 'linear-gradient(135deg, rgba(219, 234, 254, 0.98) 0%, rgba(204, 251, 241, 0.98) 100%)'
                     : 'rgba(255, 255, 255, 0.92)',
@@ -134,6 +134,7 @@ export default function Navbar() {
                   style={{
                     width: '100%',
                     height: '100%',
+                    borderRadius: '999px',
                     objectFit: 'contain',
                     display: 'block',
                     transition: 'transform 0.2s ease',

@@ -8,7 +8,7 @@ export default function SearchResultsSkeleton({ count = 6 }) {
         >
           <div className="animate-pulse space-y-5">
             <div className="flex items-start gap-4">
-              <div className="h-14 w-14 rounded-xl bg-slate-200" />
+              <div className="h-14 w-14 rounded-full bg-slate-200" />
               <div className="flex-1 space-y-3">
                 <div className="h-4 w-1/3 rounded-full bg-slate-200" />
                 <div className="h-7 w-3/4 rounded-full bg-slate-200" />

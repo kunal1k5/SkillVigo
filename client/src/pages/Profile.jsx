@@ -132,7 +132,7 @@ const StatsSection = ({ stats }) => (
       { label: 'Active Clients', value: stats.activeClients, icon: '??' }
     ].map((stat, idx) => (
       <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-xl shrink-0">
+        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-xl shrink-0">
           {stat.icon}
         </div>
         <div>

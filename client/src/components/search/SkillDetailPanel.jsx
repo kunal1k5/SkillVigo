@@ -89,7 +89,7 @@ export default function SkillDetailPanel({ skill, onBook, onChat, isBooking = fa
         </h2>
 
         <div className="mt-4 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-base font-bold text-slate-700">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700">
             {skill.providerInitials}
           </div>
           <div>

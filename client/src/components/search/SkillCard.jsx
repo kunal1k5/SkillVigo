@@ -51,7 +51,7 @@ export default function SkillCard({ skill, isActive = false, onSelect }) {
       <div className="space-y-4">
         <div className="flex items-start gap-4">
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-base font-bold text-slate-700"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-base font-bold text-slate-700"
           >
             {skill.providerInitials}
           </div>

@@ -68,7 +68,10 @@ export default function PostCard({ post, currentUserId, onToggleLike, onAddComme
       className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lift"
     >
       <div className="flex items-start gap-4">
-        <Link className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-xs font-semibold text-white transition hover:bg-slate-700" to={`/profile/${post.user._id || post.user.id}`}>
+        <Link
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white transition hover:bg-slate-700"
+          to={`/profile/${post.user._id || post.user.id}`}
+        >
           {getInitials(post.user.name)}
         </Link>
         <div className="flex-1">
