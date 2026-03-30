@@ -144,7 +144,6 @@ export default function Footer() {
               }}
             >
               <small>Copyright {new Date().getFullYear()} SkillVigo. All rights reserved.</small>
-              <small>Designed for a cleaner, more premium local product feel.</small>
             </div>
           </div>
         </div>

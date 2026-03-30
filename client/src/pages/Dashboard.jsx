@@ -133,10 +133,12 @@ function Sidebar({ user, activeNav, setActiveNav, isProvider }) {
     <aside className="w-full md:w-64 flex-shrink-0">
       <div className="sticky top-24 flex flex-col gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 flex flex-col items-center text-center">
-          <div className="h-20 w-20 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold mb-4">
-            {getInitials(user?.name)}
-          </div>
-          <h2 className="text-xl font-bold text-slate-800">{user?.name || 'User'}</h2>
+          <Link to={`/profile/${user?._id || user?.id || ''}`} className="inline-block transition hover:opacity-80">
+            <div className="h-20 w-20 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold mb-4">
+              {getInitials(user?.name)}
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 hover:text-blue-600">{user?.name || 'User'}</h2>
+          </Link>
           <span className="text-sm font-semibold text-blue-600 uppercase tracking-wider mt-1 bg-blue-50 px-3 py-1 rounded-full">
             {user?.role || 'seeker'}
           </span>
