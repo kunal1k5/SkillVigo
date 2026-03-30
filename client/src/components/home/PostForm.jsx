@@ -108,7 +108,7 @@ export default function PostForm({ user, onPost }) {
               className="hidden"
             />
           </label>
-          <span className="text-slate-400">{imageName || 'PNG, JPG, WEBP supported'}</span>
+          {imageName && <span className="text-slate-400">{imageName}</span>}
         </div>
 
         <button
