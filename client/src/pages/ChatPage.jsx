@@ -41,7 +41,9 @@ const ChatList = ({ conversations, activeChatId, onSelectChat, searchQuery, onSe
             onChange={(e) => onSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
           />
-          <span className="absolute left-3.5 top-3 text-slate-400">??</span>
+          <span className="absolute left-3.5 top-3 text-slate-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </span>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -83,7 +85,9 @@ const ChatWindow = ({ activeChat, messages, onSendMessage }) => {
 
   if (!activeChat) return (
     <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-500">
-      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm">??</div>
+      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm text-slate-400">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+      </div>
       <h2 className="text-xl font-semibold text-slate-700">Your Messages</h2>
       <p className="mt-2 text-sm">Select a conversation to start chatting</p>
     </div>
