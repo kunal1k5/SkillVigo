@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
 import PageContainer from './PageContainer';
 import useAuth from '../../hooks/useAuth';
+import brandLogo from '../../../logo.png';
 
 const MAIN_LINKS = [
   { to: '/', label: 'Home' },
@@ -18,6 +19,7 @@ export default function Navbar() {
   const { currentUser, loading, logout } = useAuth();
   const lastScrollYRef = useRef(0);
   const [isVisible, setIsVisible] = useState(true);
+  const [isBrandHovered, setIsBrandHovered] = useState(false);
 
   const navLinkClassName = ({ isActive }) =>
     [
@@ -95,23 +97,58 @@ export default function Navbar() {
                 alignItems: 'center',
                 gap: '10px',
                 textDecoration: 'none',
-                color: '#0f172a',
+                color: isBrandHovered ? '#1d4ed8' : '#0f172a',
                 fontWeight: 800,
                 fontSize: '1.05rem',
                 fontFamily: 'var(--sv-font-display)',
                 whiteSpace: 'nowrap',
+                transition: 'transform 0.2s ease, color 0.2s ease',
+                transform: isBrandHovered ? 'translateY(-1px)' : 'translateY(0)',
               }}
+              onMouseEnter={() => setIsBrandHovered(true)}
+              onMouseLeave={() => setIsBrandHovered(false)}
             >
               <span
                 style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '999px',
-                  background: 'var(--sv-brand)',
-                  boxShadow: '0 0 0 6px rgba(37, 99, 235, 0.08)',
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '14px',
+                  background: isBrandHovered
+                    ? 'linear-gradient(135deg, rgba(219, 234, 254, 0.98) 0%, rgba(204, 251, 241, 0.98) 100%)'
+                    : 'rgba(255, 255, 255, 0.92)',
+                  boxShadow: isBrandHovered
+                    ? '0 0 0 1px rgba(37, 99, 235, 0.16), 0 16px 28px rgba(37, 99, 235, 0.18)'
+                    : '0 12px 26px rgba(15, 23, 42, 0.12)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  padding: '4px',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+                  transform: isBrandHovered ? 'scale(1.04)' : 'scale(1)',
                 }}
-              />
-              SkillVigo
+              >
+                <img
+                  src={brandLogo}
+                  alt="SkillVigo logo"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    display: 'block',
+                    transition: 'transform 0.2s ease',
+                    transform: isBrandHovered ? 'scale(1.05)' : 'scale(1)',
+                  }}
+                />
+              </span>
+              <span
+                style={{
+                  transition: 'letter-spacing 0.2s ease, color 0.2s ease',
+                  letterSpacing: isBrandHovered ? '0.02em' : '0',
+                }}
+              >
+                SkillVigo
+              </span>
             </Link>
 
             <div

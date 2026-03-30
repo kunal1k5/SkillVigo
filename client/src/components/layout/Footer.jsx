@@ -64,18 +64,22 @@ export default function Footer() {
               }}
             >
               <div style={{ display: 'grid', gap: '12px' }}>
-                <Badge tone="dark" uppercase style={{ width: 'fit-content' }}>
-                  Premium local marketplace
+                <Badge
+                  tone="dark"
+                  uppercase
+                  style={{ width: 'fit-content', fontSize: '14px', padding: '10px 16px', letterSpacing: '0.12em' }}
+                >
+                  Growth-Oriented
                 </Badge>
                 <h2
                   style={{
                     margin: 0,
-                    fontSize: 'clamp(1.5rem, 3vw, 2.2rem)',
-                    lineHeight: 1.1,
+                    fontSize: 'clamp(1.25rem, 2.4vw, 1.8rem)',
+                    lineHeight: 1.2,
                     fontFamily: 'var(--sv-font-display)',
                   }}
                 >
-                  Build trust quickly with a cleaner shared UI layer.
+                  "Connecting learners and trusted tutors through a seamless, thoughtful experience."
                 </h2>
                 <p style={{ margin: 0, color: 'rgba(248, 250, 252, 0.72)', lineHeight: 1.75 }}>
                   SkillVigo now has stronger layout and common components so every screen feels more polished, premium, and consistent by default.
