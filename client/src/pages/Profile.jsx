@@ -9,7 +9,7 @@ const MOCK_PROFILE = {
   id: 'user_123',
   name: 'Ananya Sharma',
   role: 'provider',
-  location: 'Bengaluru, Karnataka',
+  location: 'Mathura, UP',
   isVerified: true,
   rating: 4.8,
   bio: 'Senior Full-Stack Developer and Technical Consultant. Passionate about teaching modern web technologies and helping businesses scale their digital infrastructure.',
