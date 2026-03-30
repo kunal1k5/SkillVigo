@@ -36,6 +36,17 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    bio: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: 600,
+    },
+    website: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   {
     timestamps: true,

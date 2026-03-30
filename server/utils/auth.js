@@ -24,6 +24,8 @@ export function sanitizeUser(user) {
     role: user.role,
     phone: user.phone || '',
     location: user.location || '',
+    bio: user.bio || '',
+    website: user.website || '',
     createdAt: user.createdAt,
   };
 }

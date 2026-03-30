@@ -10,6 +10,42 @@ function resolveTargetUserId(req) {
   return req.params.id;
 }
 
+function normalizeWebsite(value) {
+  const trimmedValue = String(value || '').trim();
+
+  if (!trimmedValue) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  return `https://${trimmedValue}`;
+}
+
+async function syncLegacyProfileData(user) {
+  await updateDatabase((currentDatabase) => {
+    currentDatabase.currentUser = {
+      id: user._id.toString(),
+      name: user.name,
+      area: user.location || '',
+    };
+
+    currentDatabase.skills = currentDatabase.skills.map((skill) =>
+      skill.instructorId === user._id.toString()
+        ? {
+            ...skill,
+            instructorName: user.name,
+            area: user.location || skill.area,
+          }
+        : skill,
+    );
+
+    return currentDatabase;
+  });
+}
+
 export async function getUserProfile(req, res, next) {
   try {
     const targetUserId = resolveTargetUserId(req);
@@ -19,25 +55,7 @@ export async function getUserProfile(req, res, next) {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    await updateDatabase((currentDatabase) => {
-      currentDatabase.currentUser = {
-        id: user._id.toString(),
-        name: user.name,
-        area: user.location || '',
-      };
-
-      currentDatabase.skills = currentDatabase.skills.map((skill) =>
-        skill.instructorId === user._id.toString()
-          ? {
-              ...skill,
-              instructorName: user.name,
-              area: user.location || skill.area,
-            }
-          : skill,
-      );
-
-      return currentDatabase;
-    });
+    await syncLegacyProfileData(user);
 
     return res.json({ user: sanitizeUser(user) });
   } catch (error) {
@@ -53,12 +71,15 @@ export async function updateUserProfile(req, res, next) {
       return res.status(403).json({ error: 'You do not have permission to update this profile.' });
     }
 
-    const allowedFields = ['name', 'phone', 'location'];
+    const allowedFields = ['name', 'phone', 'location', 'bio', 'website'];
     const updates = {};
 
     for (const field of allowedFields) {
       if (req.body?.[field] !== undefined) {
-        updates[field] = String(req.body[field]).trim();
+        updates[field] =
+          field === 'website'
+            ? normalizeWebsite(req.body[field])
+            : String(req.body[field]).trim();
       }
     }
 
@@ -70,6 +91,8 @@ export async function updateUserProfile(req, res, next) {
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
+
+    await syncLegacyProfileData(user);
 
     return res.json({ user: sanitizeUser(user) });
   } catch (error) {

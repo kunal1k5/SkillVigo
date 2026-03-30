@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import useAuth from '../hooks/useAuth';
@@ -97,7 +97,7 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
               to="/profile/edit"
               className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
             >
-              Edit Profile
+              Edit Profile & Settings
             </Link>
           ) : (
             <>
@@ -254,21 +254,271 @@ function buildProfileFromUser(currentUser) {
   };
 }
 
+function normalizeWebsiteValue(value = '') {
+  const trimmedValue = `${value || ''}`.trim();
+
+  if (!trimmedValue) {
+    return '';
+  }
+
+  return /^https?:\/\//i.test(trimmedValue) ? trimmedValue : `https://${trimmedValue}`;
+}
+
+function createSettingsForm(profile) {
+  return {
+    name: profile.name || '',
+    phone: profile.phone || '',
+    location: profile.location || '',
+    website: profile.about.website || '',
+    bio: profile.bio || '',
+  };
+}
+
+function SettingsPanel({
+  profile,
+  formData,
+  onChange,
+  onSubmit,
+  onReset,
+  authBusy,
+  saveState,
+  hasChanges,
+}) {
+  const statusToneStyles = {
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    error: 'border-rose-200 bg-rose-50 text-rose-700',
+  };
+
+  return (
+    <div className="space-y-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Profile Settings</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Update the details people see on your SkillVigo profile.
+          </p>
+        </div>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+          {profile.role}
+        </span>
+      </div>
+
+      {saveState.message ? (
+        <div
+          className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+            statusToneStyles[saveState.tone] || statusToneStyles.success
+          }`}
+        >
+          {saveState.message}
+        </div>
+      ) : null}
+
+      <form onSubmit={onSubmit} className="grid gap-5">
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-slate-700">Full Name</span>
+            <input
+              name="name"
+              value={formData.name}
+              onChange={onChange}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+              placeholder="Your full name"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-slate-700">Email</span>
+            <input
+              value={profile.about.email}
+              readOnly
+              className="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-500 focus:outline-none"
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-slate-700">Phone</span>
+            <input
+              name="phone"
+              value={formData.phone}
+              onChange={onChange}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+              placeholder="+91 98765 43210"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-slate-700">Location</span>
+            <input
+              name="location"
+              value={formData.location}
+              onChange={onChange}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+              placeholder="City, State"
+            />
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Website</span>
+          <input
+            name="website"
+            value={formData.website}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            placeholder="yourportfolio.com"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-700">Bio</span>
+          <textarea
+            name="bio"
+            rows={5}
+            value={formData.bio}
+            onChange={onChange}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+            placeholder="Tell people what you do, what you teach, or what kind of help you offer."
+          />
+        </label>
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-slate-500">
+            Member since <span className="font-semibold text-slate-700">{profile.about.joined}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={onReset}
+              disabled={authBusy || !hasChanges}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Reset
+            </button>
+            <button
+              type="submit"
+              disabled={authBusy || !hasChanges}
+              className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {authBusy ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function Profile() {
-  const { currentUser } = useAuth();
+  const location = useLocation();
+  const { currentUser, updateProfile, authBusy, isAuthenticated } = useAuth();
   const isOwnProfile = Boolean(currentUser);
   const profile = useMemo(() => buildProfileFromUser(currentUser), [currentUser]);
-  const [activeTab, setActiveTab] = useState(profile.showSkillsSection ? 'skills' : 'reviews');
+  const defaultTab = useMemo(
+    () => (location.pathname === '/profile/edit' && isOwnProfile
+      ? 'settings'
+      : profile.showSkillsSection
+        ? 'skills'
+        : 'reviews'),
+    [isOwnProfile, location.pathname, profile.showSkillsSection],
+  );
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [settingsForm, setSettingsForm] = useState(() => createSettingsForm(profile));
+  const [saveState, setSaveState] = useState({ tone: 'success', message: '' });
+
+  const normalizedCurrentSettings = useMemo(
+    () => createSettingsForm(profile),
+    [profile],
+  );
+
+  const hasChanges = useMemo(
+    () =>
+      JSON.stringify({
+        ...settingsForm,
+        website: normalizeWebsiteValue(settingsForm.website),
+      }) !==
+      JSON.stringify({
+        ...normalizedCurrentSettings,
+        website: normalizeWebsiteValue(normalizedCurrentSettings.website),
+      }),
+    [normalizedCurrentSettings, settingsForm],
+  );
 
   const tabs = [
     ...(profile.showSkillsSection ? [{ id: 'skills', label: 'Skills' }] : []),
     { id: 'reviews', label: 'Reviews' },
-    { id: 'about', label: 'About' }
+    { id: 'about', label: 'About' },
+    ...(isOwnProfile ? [{ id: 'settings', label: 'Settings' }] : []),
   ];
 
   useEffect(() => {
-    setActiveTab(profile.showSkillsSection ? 'skills' : 'reviews');
-  }, [profile.showSkillsSection]);
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
+  useEffect(() => {
+    setSettingsForm(createSettingsForm(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    if (!saveState.message) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSaveState({ tone: 'success', message: '' });
+    }, 2600);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [saveState.message]);
+
+  const handleSettingsChange = (event) => {
+    const { name, value } = event.target;
+    setSettingsForm((currentState) => ({
+      ...currentState,
+      [name]: value,
+    }));
+    setSaveState({ tone: 'success', message: '' });
+  };
+
+  const handleSettingsReset = () => {
+    setSettingsForm(createSettingsForm(profile));
+    setSaveState({ tone: 'success', message: '' });
+  };
+
+  const handleSettingsSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!isAuthenticated) {
+      setSaveState({
+        tone: 'error',
+        message: 'Please sign in before editing your profile settings.',
+      });
+      return;
+    }
+
+    try {
+      await updateProfile({
+        name: settingsForm.name,
+        phone: settingsForm.phone,
+        location: settingsForm.location,
+        bio: settingsForm.bio,
+        website: settingsForm.website,
+      });
+
+      setSaveState({
+        tone: 'success',
+        message: 'Profile settings updated successfully.',
+      });
+    } catch (requestError) {
+      setSaveState({
+        tone: 'error',
+        message: requestError.message || 'Could not save your profile settings.',
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col">
@@ -376,6 +626,21 @@ export default function Profile() {
                   </div>
                 ) : null}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && isOwnProfile && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <SettingsPanel
+                profile={profile}
+                formData={settingsForm}
+                onChange={handleSettingsChange}
+                onSubmit={handleSettingsSubmit}
+                onReset={handleSettingsReset}
+                authBusy={authBusy}
+                saveState={saveState}
+                hasChanges={hasChanges}
+              />
             </div>
           )}
         </div>
