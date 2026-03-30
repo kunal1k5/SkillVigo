@@ -190,3 +190,39 @@ export async function markAsRead(req, res, next) {
     return next(error);
   }
 }
+
+export async function deleteConversation(req, res, next) {
+  try {
+    const { conversationId } = req.params;
+
+    if (!conversationId) {
+      return res.status(400).json({ error: 'conversationId is required' });
+    }
+
+    await updateDatabase((currentDatabase) => {
+      const conversationExists = currentDatabase.conversations.some(
+        (conversation) => conversation.id === conversationId,
+      );
+
+      if (!conversationExists) {
+        throw Object.assign(new Error('Conversation not found'), { status: 404 });
+      }
+
+      currentDatabase.conversations = currentDatabase.conversations.filter(
+        (conversation) => conversation.id !== conversationId,
+      );
+      currentDatabase.messages = currentDatabase.messages.filter(
+        (message) => message.conversationId !== conversationId,
+      );
+
+      return currentDatabase;
+    });
+
+    return res.json({
+      success: true,
+      conversationId,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}

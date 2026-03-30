@@ -4,6 +4,10 @@ export function getConversations() {
   return api.get('/chat/conversations').then((response) => response.data);
 }
 
+export function deleteConversation(conversationId) {
+  return api.delete(`/chat/conversations/${conversationId}`).then((response) => response.data);
+}
+
 export function getMessages(conversationId) {
   return api.get(`/chat/messages/${conversationId}`).then((response) => response.data);
 }

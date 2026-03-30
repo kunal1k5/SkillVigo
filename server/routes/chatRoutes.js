@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  deleteConversation,
   getConversations,
   getMessages,
   markAsRead,
@@ -11,6 +12,7 @@ const router = express.Router();
 
 router.use(protect);
 router.get('/conversations', getConversations);
+router.delete('/conversations/:conversationId', deleteConversation);
 router.get('/messages/:conversationId', getMessages);
 router.post('/messages', sendMessage);
 router.post('/mark-read', markAsRead);
