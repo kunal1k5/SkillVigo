@@ -30,6 +30,7 @@ export function sanitizeUser(user) {
     fullAddress: user.fullAddress || '',
     bio: user.bio || '',
     website: user.website || '',
+    avatarUrl: user.avatarUrl || '',
     createdAt: user.createdAt,
   };
 }

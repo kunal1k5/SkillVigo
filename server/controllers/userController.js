@@ -28,6 +28,22 @@ function normalizeWebsite(value) {
   return `https://${trimmedValue}`;
 }
 
+function normalizeAvatarUrl(value) {
+  const trimmedValue = String(value || '').trim();
+
+  if (!trimmedValue) {
+    return '';
+  }
+
+  if (!/^data:image\/(png|jpe?g|webp);base64,/i.test(trimmedValue)) {
+    throw Object.assign(new Error('Profile photo must be a PNG, JPG, or WebP image.'), {
+      status: 400,
+    });
+  }
+
+  return trimmedValue;
+}
+
 async function syncLegacyProfileData(user) {
   await updateDatabase((currentDatabase) => {
     currentDatabase.currentUser = {
@@ -91,6 +107,7 @@ export async function updateUserProfile(req, res, next) {
       'fullAddress',
       'bio',
       'website',
+      'avatarUrl',
     ];
     const locationFieldNames = ['country', 'state', 'city', 'fullAddress'];
     const nextLocationFields = normalizeLocationFields(currentUser);
@@ -102,7 +119,9 @@ export async function updateUserProfile(req, res, next) {
         updates[field] =
           field === 'website'
             ? normalizeWebsite(req.body[field])
-            : String(req.body[field]).trim();
+            : field === 'avatarUrl'
+              ? normalizeAvatarUrl(req.body[field])
+              : String(req.body[field]).trim();
 
         if (locationFieldNames.includes(field)) {
           nextLocationFields[field] = updates[field];

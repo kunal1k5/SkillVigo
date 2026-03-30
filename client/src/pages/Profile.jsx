@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
@@ -10,6 +10,7 @@ const MOCK_PROFILE = {
   name: 'Ananya Sharma',
   role: 'provider',
   location: 'Mathura, UP',
+  avatarUrl: '',
   isVerified: true,
   rating: 4.8,
   bio: 'Senior Full-Stack Developer and Technical Consultant. Passionate about teaching modern web technologies and helping businesses scale their digital infrastructure.',
@@ -49,6 +50,14 @@ const VerifiedBadge = () => (
   </span>
 );
 
+function getAvatarFallback(name = 'SkillVigo member') {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=256&background=020617&color=fff`;
+}
+
+function getAvatarSource(profile) {
+  return profile.avatarUrl || getAvatarFallback(profile.name);
+}
+
 const ProfileHeader = ({ profile, isOwnProfile }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
@@ -59,7 +68,7 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
       <div className="relative shrink-0 group">
         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md bg-slate-100">
           <img 
-            src={"https://ui-avatars.com/api/?name=" + encodeURIComponent(profile.name) + "&size=256&background=020617&color=fff"} 
+            src={getAvatarSource(profile)}
             alt={profile.name} 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -250,6 +259,7 @@ function buildProfileFromUser(currentUser) {
         : 'Recently joined',
     },
     phone: currentUser.phone || '',
+    avatarUrl: currentUser.avatarUrl || '',
     showSkillsSection: isProvider,
   };
 }
@@ -264,6 +274,69 @@ function normalizeWebsiteValue(value = '') {
   return /^https?:\/\//i.test(trimmedValue) ? trimmedValue : `https://${trimmedValue}`;
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read the selected image.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Could not process the selected image.'));
+    image.src = dataUrl;
+  });
+}
+
+async function createAvatarDataUrl(file) {
+  if (!file?.type?.startsWith('image/')) {
+    throw new Error('Please choose an image file for your profile photo.');
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Profile photo must be smaller than 5 MB.');
+  }
+
+  const sourceDataUrl = await readFileAsDataUrl(file);
+  const image = await loadImage(sourceDataUrl);
+  const outputSize = 320;
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const squareSize = Math.min(sourceWidth, sourceHeight);
+  const offsetX = Math.max((sourceWidth - squareSize) / 2, 0);
+  const offsetY = Math.max((sourceHeight - squareSize) / 2, 0);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('Could not prepare the selected image.');
+  }
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, outputSize, outputSize);
+  context.drawImage(
+    image,
+    offsetX,
+    offsetY,
+    squareSize,
+    squareSize,
+    0,
+    0,
+    outputSize,
+    outputSize,
+  );
+
+  return canvas.toDataURL('image/jpeg', 0.82);
+}
+
 function createSettingsForm(profile) {
   return {
     name: profile.name || '',
@@ -271,6 +344,7 @@ function createSettingsForm(profile) {
     location: profile.location || '',
     website: profile.about.website || '',
     bio: profile.bio || '',
+    avatarUrl: profile.avatarUrl || '',
   };
 }
 
@@ -278,9 +352,14 @@ function SettingsPanel({
   profile,
   formData,
   onChange,
+  onPickPhoto,
+  onPhotoChange,
+  onRemovePhoto,
   onSubmit,
   onReset,
   authBusy,
+  photoBusy,
+  photoInputRef,
   saveState,
   hasChanges,
 }) {
@@ -314,6 +393,58 @@ function SettingsPanel({
       ) : null}
 
       <form onSubmit={onSubmit} className="grid gap-5">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-slate-100 shadow-sm">
+                <img
+                  src={getAvatarSource({
+                    name: formData.name || profile.name,
+                    avatarUrl: formData.avatarUrl,
+                  })}
+                  alt={formData.name || profile.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-slate-900">Profile Photo</h3>
+                <p className="text-sm leading-6 text-slate-500">
+                  Upload a clear headshot or logo. JPG, PNG, and WebP are supported.
+                </p>
+                <p className="text-xs font-medium text-slate-400">
+                  After changing or removing your photo, click save to update your profile.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={onPhotoChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={onPickPhoto}
+                disabled={photoBusy || authBusy}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {photoBusy ? 'Preparing...' : formData.avatarUrl ? 'Change Photo' : 'Add Photo'}
+              </button>
+              <button
+                type="button"
+                onClick={onRemovePhoto}
+                disabled={photoBusy || authBusy || !formData.avatarUrl}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-5 md:grid-cols-2">
           <label className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-slate-700">Full Name</span>
@@ -391,17 +522,17 @@ function SettingsPanel({
             <button
               type="button"
               onClick={onReset}
-              disabled={authBusy || !hasChanges}
+              disabled={authBusy || photoBusy || !hasChanges}
               className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Reset
             </button>
             <button
               type="submit"
-              disabled={authBusy || !hasChanges}
+              disabled={authBusy || photoBusy || !hasChanges}
               className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-              {authBusy ? 'Saving...' : 'Save Changes'}
+              {photoBusy ? 'Preparing Photo...' : authBusy ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
@@ -426,6 +557,8 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [settingsForm, setSettingsForm] = useState(() => createSettingsForm(profile));
   const [saveState, setSaveState] = useState({ tone: 'success', message: '' });
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef(null);
 
   const normalizedCurrentSettings = useMemo(
     () => createSettingsForm(profile),
@@ -488,6 +621,52 @@ export default function Profile() {
     setSaveState({ tone: 'success', message: '' });
   };
 
+  const handlePickPhoto = () => {
+    photoInputRef.current?.click();
+  };
+
+  const handlePhotoChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setSaveState({ tone: 'success', message: '' });
+    setPhotoBusy(true);
+
+    try {
+      const avatarUrl = await createAvatarDataUrl(file);
+      setSettingsForm((currentState) => ({
+        ...currentState,
+        avatarUrl,
+      }));
+      setSaveState({
+        tone: 'success',
+        message: 'Profile photo is ready. Save changes to update it on your profile.',
+      });
+    } catch (requestError) {
+      setSaveState({
+        tone: 'error',
+        message: requestError.message || 'Could not prepare your profile photo.',
+      });
+    } finally {
+      event.target.value = '';
+      setPhotoBusy(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setSettingsForm((currentState) => ({
+      ...currentState,
+      avatarUrl: '',
+    }));
+    setSaveState({
+      tone: 'success',
+      message: 'Profile photo removed. Save changes to apply this update.',
+    });
+  };
+
   const handleSettingsSubmit = async (event) => {
     event.preventDefault();
 
@@ -506,6 +685,7 @@ export default function Profile() {
         location: settingsForm.location,
         bio: settingsForm.bio,
         website: settingsForm.website,
+        avatarUrl: settingsForm.avatarUrl,
       });
 
       setSaveState({
@@ -635,9 +815,14 @@ export default function Profile() {
                 profile={profile}
                 formData={settingsForm}
                 onChange={handleSettingsChange}
+                onPickPhoto={handlePickPhoto}
+                onPhotoChange={handlePhotoChange}
+                onRemovePhoto={handleRemovePhoto}
                 onSubmit={handleSettingsSubmit}
                 onReset={handleSettingsReset}
                 authBusy={authBusy}
+                photoBusy={photoBusy}
+                photoInputRef={photoInputRef}
                 saveState={saveState}
                 hasChanges={hasChanges}
               />

@@ -67,6 +67,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    avatarUrl: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: 2000000,
+    },
   },
   {
     timestamps: true,
