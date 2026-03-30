@@ -1,5 +1,9 @@
 import User from '../models/User.js';
 import { generateToken, sanitizeUser } from '../utils/auth.js';
+import {
+  hasCompleteLocationFields,
+  normalizeLocationFields,
+} from '../utils/location.js';
 
 const PUBLIC_ROLES = ['provider', 'seeker'];
 
@@ -18,11 +22,17 @@ export async function registerUser(req, res, next) {
       password,
       role = 'seeker',
       phone = '',
-      location = '',
     } = req.body || {};
+    const locationFields = normalizeLocationFields(req.body || {});
 
     if (!name?.trim() || !email?.trim() || !password) {
       return res.status(400).json({ error: 'name, email, and password are required.' });
+    }
+
+    if (!hasCompleteLocationFields(locationFields)) {
+      return res.status(400).json({
+        error: 'country, state, city, and fullAddress are required.',
+      });
     }
 
     if (password.length < 8) {
@@ -46,7 +56,7 @@ export async function registerUser(req, res, next) {
       password,
       role,
       phone: phone.trim(),
-      location: location.trim(),
+      ...locationFields,
     });
 
     return res.status(201).json(buildAuthResponse(user));

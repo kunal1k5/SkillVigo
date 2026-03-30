@@ -36,6 +36,26 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    country: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    state: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    fullAddress: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     bio: {
       type: String,
       trim: true,

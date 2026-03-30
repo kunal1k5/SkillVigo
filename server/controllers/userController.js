@@ -1,6 +1,10 @@
 import { readDatabase, updateDatabase } from '../data/dataStore.js';
 import User from '../models/User.js';
 import { sanitizeUser } from '../utils/auth.js';
+import {
+  buildLocationLabel,
+  normalizeLocationFields,
+} from '../utils/location.js';
 
 function resolveTargetUserId(req) {
   if (!req.params.id || req.params.id === 'me') {
@@ -71,8 +75,27 @@ export async function updateUserProfile(req, res, next) {
       return res.status(403).json({ error: 'You do not have permission to update this profile.' });
     }
 
-    const allowedFields = ['name', 'phone', 'location', 'bio', 'website'];
+    const currentUser = await User.findById(targetUserId);
+
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const allowedFields = [
+      'name',
+      'phone',
+      'location',
+      'country',
+      'state',
+      'city',
+      'fullAddress',
+      'bio',
+      'website',
+    ];
+    const locationFieldNames = ['country', 'state', 'city', 'fullAddress'];
+    const nextLocationFields = normalizeLocationFields(currentUser);
     const updates = {};
+    let shouldRebuildLocation = false;
 
     for (const field of allowedFields) {
       if (req.body?.[field] !== undefined) {
@@ -80,17 +103,22 @@ export async function updateUserProfile(req, res, next) {
           field === 'website'
             ? normalizeWebsite(req.body[field])
             : String(req.body[field]).trim();
+
+        if (locationFieldNames.includes(field)) {
+          nextLocationFields[field] = updates[field];
+          shouldRebuildLocation = true;
+        }
       }
+    }
+
+    if (shouldRebuildLocation) {
+      updates.location = buildLocationLabel(nextLocationFields);
     }
 
     const user = await User.findByIdAndUpdate(targetUserId, updates, {
       new: true,
       runValidators: true,
     });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
 
     await syncLegacyProfileData(user);
 

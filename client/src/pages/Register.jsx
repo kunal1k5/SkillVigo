@@ -3,6 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
 import useAuth from '../hooks/useAuth';
+import {
+  buildLocationLabel,
+  getCityOptions,
+  getCountryOptions,
+  getStateOptions,
+  reverseGeocodeCoordinates,
+  withCurrentValue,
+} from '../utils/locationOptions';
 import { getDefaultRouteForRole } from '../utils/authRedirect';
 
 const ROLE_OPTIONS = [
@@ -52,6 +60,18 @@ const Icons = {
       <circle cx="12" cy="10" r="2.5" />
     </svg>
   ),
+  globe: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 12H20.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.5C14.6 5.8 16.1 8.8 16.1 12C16.1 15.2 14.6 18.2 12 20.5C9.4 18.2 7.9 15.2 7.9 12C7.9 8.8 9.4 5.8 12 3.5Z" />
+    </svg>
+  ),
+  navigation: (
+    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.4 4.7L18.5 18.3L12.6 15.9L5.7 19.3L11.4 4.7Z" />
+    </svg>
+  ),
   skill: (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" />
@@ -89,6 +109,71 @@ function InputField({ label, name, type = 'text', value, onChange, placeholder, 
           placeholder={placeholder}
           required={required}
           className="h-full flex-1 border-none bg-transparent text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+        />
+      </div>
+    </label>
+  );
+}
+
+function SuggestionField({ label, name, value, onChange, required, icon, options, placeholder }) {
+  const datalistId = `${name}-options`;
+
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-slate-700">
+        {label}
+        {required ? <span className="ml-1 text-emerald-600">*</span> : null}
+      </span>
+      <div className="group flex h-14 items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-emerald-300 focus-within:bg-emerald-50/40 focus-within:shadow-md">
+        {icon ? (
+          <span className="mr-3 text-slate-400 transition-colors group-focus-within:text-emerald-600">
+            {icon}
+          </span>
+        ) : null}
+        <input
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          list={options.length ? datalistId : undefined}
+          className="h-full flex-1 border-none bg-transparent text-[15px] text-slate-900 focus:outline-none focus:ring-0"
+        />
+      </div>
+      {options.length ? (
+        <datalist id={datalistId}>
+          {options.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+      ) : null}
+    </label>
+  );
+}
+
+function TextAreaField({ label, name, value, onChange, placeholder, required, rows = 3, icon }) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-slate-700">
+        {label}
+        {required ? <span className="ml-1 text-emerald-600">*</span> : null}
+      </span>
+      <div className="group flex gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-emerald-300 focus-within:bg-emerald-50/40 focus-within:shadow-md">
+        {icon ? (
+          <span className="mt-1 text-slate-400 transition-colors group-focus-within:text-emerald-600">
+            {icon}
+          </span>
+        ) : null}
+        <textarea
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          rows={rows}
+          className="min-h-[96px] flex-1 resize-y border-none bg-transparent text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
         />
       </div>
     </label>
@@ -188,21 +273,55 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     phone: '',
-    location: '',
+    country: 'India',
+    state: '',
+    city: '',
+    fullAddress: '',
     role: 'seeker',
     primarySkill: '',
   });
   const [error, setError] = useState('');
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationHint, setLocationHint] = useState('');
+
+  const countryOptions = withCurrentValue(getCountryOptions(), formData.country);
+  const stateOptions = withCurrentValue(getStateOptions(formData.country), formData.state);
+  const cityOptions = withCurrentValue(
+    getCityOptions(formData.country, formData.state),
+    formData.city,
+  );
 
   const passwordsMatch =
     formData.confirmPassword === '' || formData.password === formData.confirmPassword;
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((currentData) => ({
-      ...currentData,
-      [name]: value,
-    }));
+    setError('');
+    setLocationHint('');
+
+    setFormData((currentData) => {
+      if (name === 'country') {
+        return {
+          ...currentData,
+          country: value,
+          state: '',
+          city: '',
+        };
+      }
+
+      if (name === 'state') {
+        return {
+          ...currentData,
+          state: value,
+          city: '',
+        };
+      }
+
+      return {
+        ...currentData,
+        [name]: value,
+      };
+    });
   };
 
   const handleRoleChange = (role) => {
@@ -210,6 +329,54 @@ export default function RegisterPage() {
       ...currentData,
       role,
     }));
+  };
+
+  const handleUseCurrentLocation = async () => {
+    setError('');
+    setLocationHint('');
+
+    if (!navigator.geolocation) {
+      setError('This browser does not support location access. Please fill the address manually.');
+      return;
+    }
+
+    setLocationBusy(true);
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0,
+        });
+      });
+
+      const resolvedAddress = await reverseGeocodeCoordinates({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+
+      setFormData((currentData) => ({
+        ...currentData,
+        country: resolvedAddress.country || currentData.country,
+        state: resolvedAddress.state || currentData.state,
+        city: resolvedAddress.city || currentData.city,
+        fullAddress: resolvedAddress.fullAddress || currentData.fullAddress,
+      }));
+      setLocationHint('Location filled from your device. You can still adjust any field manually.');
+    } catch (requestError) {
+      if (requestError?.code === 1) {
+        setError('Location permission was denied. Please allow it or fill the address manually.');
+      } else if (requestError?.code === 2) {
+        setError('Your current location could not be detected. Please fill the address manually.');
+      } else if (requestError?.code === 3) {
+        setError('Location request timed out. Please try again or enter the address manually.');
+      } else {
+        setError(requestError.message || 'Could not fetch your current location right now.');
+      }
+    } finally {
+      setLocationBusy(false);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -226,6 +393,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!formData.country || !formData.state || !formData.city || !formData.fullAddress.trim()) {
+      setError('Please complete your country, state, city, and full address before registering.');
+      return;
+    }
+
     try {
       const user = await register({
         name: formData.name,
@@ -233,7 +405,11 @@ export default function RegisterPage() {
         password: formData.password,
         role: formData.role,
         phone: formData.phone,
-        location: formData.location,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        fullAddress: formData.fullAddress,
+        location: buildLocationLabel(formData),
       });
 
       navigate(getDefaultRouteForRole(user.role), { replace: true });
@@ -329,13 +505,88 @@ export default function RegisterPage() {
                   required
                   icon={Icons.phone}
                 />
-                <InputField
-                  label="Location"
-                  name="location"
-                  value={formData.location}
+                <div className="rounded-[26px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Use current location</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                        Autofill address using your browser location permission.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleUseCurrentLocation}
+                      disabled={locationBusy}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span>{Icons.navigation}</span>
+                      {locationBusy ? 'Fetching...' : 'Use my location'}
+                    </button>
+                  </div>
+                  {locationHint ? (
+                    <p className="mt-3 text-sm font-medium text-emerald-700">{locationHint}</p>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-400">
+                      Manual entry is always available if you prefer not to share your location.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-[28px] border border-slate-200 bg-slate-50/70 p-5 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Location details</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Pick from suggestions or type manually, then add the full address.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                    {buildLocationLabel(formData) || 'Address pending'}
+                  </span>
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-3">
+                  <SuggestionField
+                    label="Country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    required
+                    icon={Icons.globe}
+                    options={countryOptions}
+                    placeholder="Choose or type country"
+                  />
+                  <SuggestionField
+                    label="State"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    required
+                    icon={Icons.mapPin}
+                    options={stateOptions}
+                    placeholder={formData.country ? 'Choose or type state' : 'Type state'}
+                  />
+                  <SuggestionField
+                    label="City"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    required
+                    icon={Icons.mapPin}
+                    options={cityOptions}
+                    placeholder={formData.state ? 'Choose or type city' : 'Type city'}
+                  />
+                </div>
+
+                <TextAreaField
+                  label="Full address"
+                  name="fullAddress"
+                  value={formData.fullAddress}
                   onChange={handleChange}
-                  placeholder="Pune, Maharashtra"
+                  placeholder="House number, street, area, landmark, postal code..."
                   required
+                  rows={4}
                   icon={Icons.mapPin}
                 />
               </div>
