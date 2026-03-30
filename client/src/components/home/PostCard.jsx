@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import CommentBox from './CommentBox';
 import { createShareLink, formatRelativeTime } from './homeHelpers';
 
@@ -67,13 +68,15 @@ export default function PostCard({ post, currentUserId, onToggleLike, onAddComme
       className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lift"
     >
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-xs font-semibold text-white">
+        <Link className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-xs font-semibold text-white transition hover:bg-slate-700" to={`/profile/${post.user._id || post.user.id}`}>
           {getInitials(post.user.name)}
-        </div>
+        </Link>
         <div className="flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-slate-900">{post.user.name}</p>
+              <Link to={`/profile/${post.user._id || post.user.id}`} className="text-sm font-semibold text-slate-900 hover:underline">
+                {post.user.name}
+              </Link>
               <p className="text-xs text-slate-500">{post.user.role}</p>
             </div>
             <span className="text-xs font-semibold text-slate-400">

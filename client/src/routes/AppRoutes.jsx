@@ -32,6 +32,7 @@ export default function AppRoutes() {
       <Route path="/chat" element={<ChatPage />} />
       <Route path="/bookings" element={<BookingPage />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/profile/:id" element={<Profile />} />
       <Route path="/profile/edit" element={<Profile />} />
 
       <Route element={<PublicOnlyRoute />}>

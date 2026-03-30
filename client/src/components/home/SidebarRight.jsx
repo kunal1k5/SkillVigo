@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function SidebarRight({ suggestions, trending }) {
   return (
     <aside className="space-y-6">
@@ -8,13 +10,14 @@ export default function SidebarRight({ suggestions, trending }) {
         </div>
         <div className="mt-4 space-y-3">
           {suggestions.map((profile) => (
-            <div
+            <Link
               key={profile.id}
-              className="rounded-xl border border-slate-100 bg-white/90 p-4 transition hover:-translate-y-0.5 hover:shadow-lift"
+              to={`/profile/${profile.id}`}
+              className="block rounded-xl border border-slate-100 bg-white/90 p-4 transition hover:-translate-y-0.5 hover:shadow-lift"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{profile.name}</p>
+                  <p className="text-sm font-semibold text-slate-900 hover:underline">{profile.name}</p>
                   <p className="text-xs text-slate-500">{profile.role}</p>
                 </div>
                 <p className="text-xs font-semibold text-slate-500">{profile.rating} rating</p>
@@ -23,7 +26,7 @@ export default function SidebarRight({ suggestions, trending }) {
                 <span>{profile.location}</span>
                 <span className="font-semibold text-slate-700">{profile.rate}</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
