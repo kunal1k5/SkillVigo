@@ -5,14 +5,15 @@ import PageContainer from './PageContainer';
 const footerLinks = [
   { label: 'About', to: '/' },
   { label: 'Explore', to: '/search' },
-  { label: 'Login', to: '/login' },
-  { label: 'Register', to: '/register' },
+  { label: 'Login', to: '/login', state: { allowPublicAccess: true } },
+  { label: 'Register', to: '/register', state: { allowPublicAccess: true } },
 ];
 
 const socialLinks = [
   { label: 'Twitter', href: 'https://twitter.com' },
   { label: 'LinkedIn', href: 'https://linkedin.com' },
   { label: 'Instagram', href: 'https://instagram.com' },
+  { label: 'GitHub', href: 'https://github.com/kunal1k5/SkillVigo' },
 ];
 
 export default function Footer() {
@@ -101,6 +102,7 @@ export default function Footer() {
                     <Link
                       key={link.label}
                       to={link.to}
+                      state={link.state}
                       style={{ textDecoration: 'none', color: 'rgba(248, 250, 252, 0.76)' }}
                     >
                       {link.label}

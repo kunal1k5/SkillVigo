@@ -1,10 +1,11 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import Loader from '../common/Loader';
 import useAuth from '../../hooks/useAuth';
 import { getDefaultRouteForRole } from '../../utils/authRedirect';
 
 export default function PublicOnlyRoute() {
   const { currentUser, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -21,7 +22,7 @@ export default function PublicOnlyRoute() {
     );
   }
 
-  if (currentUser) {
+  if (currentUser && !location.state?.allowPublicAccess) {
     return <Navigate to={getDefaultRouteForRole(currentUser.role)} replace />;
   }
 

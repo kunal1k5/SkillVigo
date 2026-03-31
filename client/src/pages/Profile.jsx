@@ -135,13 +135,13 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
 const StatsSection = ({ stats }) => (
   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
     {[
-      { label: 'Total Bookings', value: stats.totalBookings, icon: '??' },
-      { label: 'Listed Skills', value: stats.totalSkills, icon: '?' },
-      { label: 'Experience', value: stats.experience, icon: '??' },
-      { label: 'Active Clients', value: stats.activeClients, icon: '??' }
+      { label: 'Total Bookings', value: stats.totalBookings, icon: 'TB' },
+      { label: 'Listed Skills', value: stats.totalSkills, icon: 'LS' },
+      { label: 'Experience', value: stats.experience, icon: 'EX' },
+      { label: 'Active Clients', value: stats.activeClients, icon: 'AC' }
     ].map((stat, idx) => (
       <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-xl shrink-0">
+        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-sm font-bold tracking-wide text-slate-700 shrink-0">
           {stat.icon}
         </div>
         <div>
