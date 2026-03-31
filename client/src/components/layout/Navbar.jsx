@@ -92,6 +92,7 @@ export default function Navbar() {
           >
             <Link
               to="/"
+              className="order-1 flex-shrink-0"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -153,7 +154,7 @@ export default function Navbar() {
             </Link>
 
             <div
-              className="order-3 md:order-none w-full md:w-auto mt-2 md:mt-0 pb-2 md:pb-0 flex items-center justify-start md:justify-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar"
+              className="order-3 md:order-2 w-full md:w-auto mt-2 md:mt-0 pb-2 md:pb-0 flex items-center justify-start md:justify-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar"
               style={{
                 flexWrap: 'nowrap',
                 flex: 1,
@@ -173,7 +174,7 @@ export default function Navbar() {
             </div>
 
             <div
-              className="flex-shrink-0"
+              className="flex-shrink-0 order-2 md:order-3"
               style={{
                 display: 'flex',
                 alignItems: 'center',
