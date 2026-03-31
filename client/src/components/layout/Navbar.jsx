@@ -61,7 +61,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div style={{ height: '98px' }} />
+      <div className="h-[135px] md:h-[98px]" />
       <header
         style={{
           position: 'fixed',
@@ -153,12 +153,9 @@ export default function Navbar() {
             </Link>
 
             <div
+              className="order-3 md:order-none w-full md:w-auto mt-2 md:mt-0 pb-2 md:pb-0 flex items-center justify-start md:justify-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '14px',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
                 flex: 1,
               }}
             >
@@ -176,11 +173,12 @@ export default function Navbar() {
             </div>
 
             <div
+              className="flex-shrink-0"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
               }}
             >
               {loading ? null : currentUser ? (
