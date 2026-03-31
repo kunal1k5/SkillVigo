@@ -21,7 +21,7 @@ export const suggestedProfiles = [
   },
   {
     id: 'suggest-2',
-    name: 'Arjun Mehta',
+    name: 'Arjun Mehta ',
     role: 'Guitar Teacher',
     location: 'Bandra',
     rate: 'INR 750/hr',
