@@ -88,8 +88,8 @@ export default function Navbar() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '18px',
-              flexWrap: 'wrap',
+              gap: '12px',
+              flexWrap: 'nowrap',
               padding: '16px 18px',
               borderRadius: '20px',
               background: 'rgba(255, 255, 255, 0.92)',
@@ -103,11 +103,11 @@ export default function Navbar() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 textDecoration: 'none',
                 color: isBrandHovered ? '#1d4ed8' : '#0f172a',
                 fontWeight: 800,
-                fontSize: '1.05rem',
+                fontSize: '1rem',
                 fontFamily: 'var(--sv-font-display)',
                 whiteSpace: 'nowrap',
                 transition: 'transform 0.2s ease, color 0.2s ease',
@@ -218,14 +218,14 @@ export default function Navbar() {
                   </Button>
                 </>
               ) : (
-                <>
+                  <>
                   <Link
                     to="/login"
                     style={{
                       textDecoration: 'none',
                       color: '#475569',
                       fontWeight: 700,
-                      padding: '8px 14px',
+                      padding: '8px 10px',
                       borderRadius: '999px',
                       transition: 'all 0.2s ease',
                       whiteSpace: 'nowrap',
@@ -251,7 +251,7 @@ export default function Navbar() {
                       textDecoration: 'none',
                       color: '#ffffff',
                       fontWeight: 800,
-                      padding: '10px 16px',
+                      padding: '8px 14px',
                       borderRadius: '999px',
                       background: 'linear-gradient(90deg, #1d4ed8 0%, #0f766e 100%)',
                       boxShadow: '0 10px 24px rgba(15, 118, 110, 0.22)',
