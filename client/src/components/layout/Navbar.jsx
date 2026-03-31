@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../common/Button';
 import PageContainer from './PageContainer';
 import useAuth from '../../hooks/useAuth';
@@ -16,10 +16,12 @@ const MAIN_LINKS = [
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, loading, logout } = useAuth();
   const lastScrollYRef = useRef(0);
   const [isVisible, setIsVisible] = useState(true);
   const [isBrandHovered, setIsBrandHovered] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinkClassName = ({ isActive }) =>
     [
@@ -59,9 +61,13 @@ export default function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <>
-      <div className="h-[135px] md:h-[98px]" />
+      <div className="h-[98px]" />
       <header
         style={{
           position: 'fixed',
@@ -78,6 +84,7 @@ export default function Navbar() {
         <PageContainer>
           <nav
             style={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -154,11 +161,7 @@ export default function Navbar() {
             </Link>
 
             <div
-              className="order-3 md:order-2 w-full md:w-auto mt-2 md:mt-0 pb-2 md:pb-0 flex items-center justify-start md:justify-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar"
-              style={{
-                flexWrap: 'nowrap',
-                flex: 1,
-              }}
+              className="hidden md:flex order-2 flex-1 items-center justify-center gap-2 lg:gap-3"
             >
               {MAIN_LINKS.map((item) => (
                 <NavLink key={item.to} to={item.to} className={navLinkClassName}>
@@ -174,11 +177,11 @@ export default function Navbar() {
             </div>
 
             <div
-              className="flex-shrink-0 order-2 md:order-3"
+              className="flex-shrink-0 order-3"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 flexWrap: 'nowrap',
               }}
             >
@@ -270,11 +273,70 @@ export default function Navbar() {
                     Register
                   </Link>
                 </>
+                )}
+
+                <button
+                  className="md:hidden flex items-center justify-center w-10 h-10 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  aria-label="Toggle menu"
+                >
+                  {isMobileMenuOpen ? (
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                     </svg>
+                  ) : (
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <circle cx="12" cy="5" r="1.5" />
+                        <circle cx="12" cy="12" r="1.5" />
+                        <circle cx="12" cy="19" r="1.5" />
+                     </svg>
+                  )}
+                </button>
+              </div>
+
+              {isMobileMenuOpen && (
+                <div
+                  className="md:hidden absolute top-[calc(100%+8px)] left-0 right-0 p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-2 z-50 transform origin-top transition-all"
+                  style={{
+                    boxShadow: '0 14px 30px rgba(15, 23, 42, 0.1)',
+                  }}
+                >
+                  {MAIN_LINKS.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `px-4 py-3 text-sm font-bold rounded-xl no-underline transition-all ${
+                          isActive
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                        }`
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+
+                  {!loading && currentUser?.role === 'admin' && (
+                    <NavLink
+                      to="/admin"
+                      className={({ isActive }) =>
+                        `px-4 py-3 text-sm font-bold rounded-xl no-underline transition-all ${
+                          isActive
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                        }`
+                      }
+                    >
+                      Admin
+                    </NavLink>
+                  )}
+                </div>
               )}
-            </div>
-          </nav>
-        </PageContainer>
-      </header>
+            </nav>
+          </PageContainer>
+        </header>
     </>
   );
 }
