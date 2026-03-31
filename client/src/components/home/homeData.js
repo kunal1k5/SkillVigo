@@ -13,7 +13,7 @@ export const defaultSkills = ['Algebra', 'Python Mentoring', 'UX Portfolio Revie
 export const suggestedProfiles = [
   {
     id: 'suggest-1',
-    name: 'Riya Sharma',
+    name: 'Riya chamar ',
     role: 'Math Tutor',
     location: 'Andheri West',
     rate: 'INR 600/hr',
