@@ -6,7 +6,7 @@ import useAuth from '../hooks/useAuth';
 import { getDefaultRouteForRole } from '../utils/authRedirect';
 
 const DEMO_CREDENTIALS = {
-  email: 'demo@skillvigo.in',
+  email: 'demo@skillvigo.com',
   password: 'Demo@123456',
 };
 

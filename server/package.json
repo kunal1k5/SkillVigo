@@ -7,6 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
+  "nodemonConfig": {
+    "ignore": ["data/*", "uploads/*"]
+  },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "express": "^4.18.0",
