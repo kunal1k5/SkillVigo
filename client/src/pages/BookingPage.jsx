@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Calendar } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
 import Footer from '../components/layout/Footer';
@@ -280,7 +281,9 @@ export default function BookingPage() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
       <PageContainer className="flex-1 py-8">
-        <h1 className="text-3xl font-bold mb-6">Book a Service</h1>
+        <h1 className="text-3xl flex items-center gap-3 font-bold mb-6">
+          <Calendar className="w-8 h-8 text-emerald-500" /> Book a Service
+        </h1>
 
         {showSuccess && (
           <div className="mb-4 p-4 bg-green-100 text-green-700 rounded">

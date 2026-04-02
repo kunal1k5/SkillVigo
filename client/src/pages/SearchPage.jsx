@@ -43,28 +43,6 @@ function RefreshIcon({ className = 'h-5 w-5' }) {
   );
 }
 
-function ChipCloseIcon({ className = 'h-3.5 w-3.5' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
-      <path d="M6 6L18 18" strokeLinecap="round" />
-      <path d="M18 6L6 18" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function FilterChip({ label, onRemove }) {
-  return (
-    <button
-      type="button"
-      onClick={onRemove}
-      className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
-    >
-      {label}
-      <ChipCloseIcon />
-    </button>
-  );
-}
-
 function StatusBanner({ tone = 'info', title, description, actionLabel, onAction, busy = false }) {
   const toneStyles = {
     info: 'border-blue-200 bg-blue-50 text-blue-900',
@@ -87,6 +65,39 @@ function StatusBanner({ tone = 'info', title, description, actionLabel, onAction
             onClick={onAction}
             disabled={busy}
             className="inline-flex items-center gap-2 rounded-full border border-current/20 bg-white/70 px-4 py-2 text-sm font-semibold transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <RefreshIcon className="h-4 w-4" />
+            {busy ? 'Retrying...' : actionLabel}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function CompactStatusNote({ tone = 'info', title, description, actionLabel, onAction, busy = false }) {
+  const toneStyles = {
+    info: 'border-blue-200 bg-blue-50 text-blue-900',
+    success: 'border-teal-200 bg-teal-50 text-teal-900',
+    warning: 'border-amber-200 bg-amber-50 text-amber-900',
+    error: 'border-red-200 bg-red-50 text-red-900',
+  };
+
+  return (
+    <div className={`rounded-2xl border p-3.5 ${toneStyles[tone] || toneStyles.info}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-75">Live search</p>
+          <p className="mt-1 text-sm font-semibold">{title}</p>
+          <p className="mt-1 text-sm opacity-80">{description}</p>
+        </div>
+
+        {actionLabel && onAction ? (
+          <button
+            type="button"
+            onClick={onAction}
+            disabled={busy}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-current/20 bg-white/70 px-4 py-2 text-sm font-semibold transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
           >
             <RefreshIcon className="h-4 w-4" />
             {busy ? 'Retrying...' : actionLabel}
@@ -140,7 +151,7 @@ export default function SearchPage() {
   const [sortOption, setSortOption] = useState('recommended');
   const [selectedSkillId, setSelectedSkillId] = useState('');
   const [recentSearches, setRecentSearches] = useState(() => readRecentSearches());
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [fetchAlert, setFetchAlert] = useState(null);
   const [actionAlert, setActionAlert] = useState(null);
   const [bookingSkillId, setBookingSkillId] = useState('');
@@ -157,6 +168,27 @@ export default function SearchPage() {
       window.clearTimeout(timeoutId);
     };
   }, [trimmedQuery]);
+
+  useEffect(() => {
+    if (!isFilterDrawerOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsFilterDrawerOpen(false);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFilterDrawerOpen]);
 
   useEffect(() => {
     let active = true;
@@ -244,6 +276,9 @@ export default function SearchPage() {
     [filteredSkills, selectedSkillId],
   );
   const showDetailPanel = loading || Boolean(selectedSkill);
+  const contentGridClassName = showDetailPanel
+    ? 'grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]'
+    : 'grid grid-cols-1 gap-5';
 
   const stats = useMemo(() => {
     const nearbyCount = skills.filter((skill) => typeof skill.distanceKm === 'number' && skill.distanceKm <= 10).length;
@@ -420,16 +455,28 @@ export default function SearchPage() {
         <PageContainer maxWidth={1320} className="space-y-6">
           <section className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 shadow-sm md:px-6">
             <div className="space-y-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Search
-                  </p>
-                  <h1 className="mt-1 text-xl font-semibold text-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <h1 className="truncate whitespace-nowrap text-[clamp(1.05rem,4.8vw,2rem)] font-semibold leading-tight text-slate-900">
                     Find skills near you
                   </h1>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setIsFilterDrawerOpen(true)}
+                  className="inline-flex h-11 flex-shrink-0 items-center justify-center gap-2 rounded-full bg-slate-900 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:px-4"
+                  aria-label={`Open filters. ${activeFilterChips.length} active`}
+                >
+                  <FilterIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filters</span>
+                  <span className="hidden rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold text-white sm:inline-flex">
+                    {activeFilterChips.length}
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap gap-2">
                   {stats.slice(0, 4).map((item) => (
                     <span
@@ -439,6 +486,35 @@ export default function SearchPage() {
                       <span className="font-semibold text-slate-900">{item.value}</span> {item.label}
                     </span>
                   ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeFilterChips.length ? (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
+                    >
+                      Clear all
+                    </button>
+                  ) : null}
+
+                  <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-600">
+                    <span className="pl-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 max-[479px]:hidden">
+                      Sort
+                    </span>
+                    <select
+                      value={sortOption}
+                      onChange={(event) => setSortOption(event.target.value)}
+                      className="rounded-full bg-transparent px-2 py-1 text-sm font-medium text-slate-700 outline-none"
+                    >
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               </div>
 
@@ -452,67 +528,64 @@ export default function SearchPage() {
                 resultCount={filteredSkills.length}
                 activeFiltersCount={activeFilterChips.length}
               />
+
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+                {fetchAlert ? (
+                  <CompactStatusNote
+                    tone={fetchAlert.tone}
+                    title={fetchAlert.title}
+                    description={fetchAlert.description}
+                    actionLabel="Refresh"
+                    onAction={reloadSkills}
+                    busy={isRefreshing}
+                  />
+                ) : (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Live search</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">Connected to fresh results</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Listings are loading from the live marketplace and updating with your filters.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm lg:hidden">
-            <button
-              type="button"
-              onClick={() => setIsMobileFiltersOpen((currentValue) => !currentValue)}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          {isFilterDrawerOpen ? (
+            <div
+              className="fixed inset-0 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Search filters"
             >
-              <FilterIcon className="h-4 w-4" />
-              {isMobileFiltersOpen ? 'Hide filters' : 'Show filters'}
-            </button>
-
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                {activeFilterChips.length} active
-              </span>
-              <select
-                value={sortOption}
-                onChange={(event) => setSortOption(event.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {isMobileFiltersOpen ? (
-            <div className="lg:hidden">
-              <FilterSidebar
-                categories={SKILL_CATEGORIES}
-                selectedCategory={selectedCategory}
-                onCategoryChange={(value) => startTransition(() => setSelectedCategory(value))}
-                selectedMode={selectedMode}
-                onModeChange={(value) => startTransition(() => setSelectedMode(value))}
-                maxDistance={maxDistance}
-                onDistanceChange={setMaxDistance}
-                onReset={resetFilters}
-                onClose={() => setIsMobileFiltersOpen(false)}
-                isMobile
+              <button
+                type="button"
+                aria-label="Close filters"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="absolute inset-0 bg-slate-950/35 backdrop-blur-sm"
               />
+
+              <div className="absolute inset-y-0 right-0 w-full max-w-[440px] p-3 sm:p-4">
+                <div className="h-full overflow-y-auto rounded-[28px] bg-slate-100 p-2 shadow-2xl sm:p-3">
+                  <FilterSidebar
+                    categories={SKILL_CATEGORIES}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={(value) => startTransition(() => setSelectedCategory(value))}
+                    selectedMode={selectedMode}
+                    onModeChange={(value) => startTransition(() => setSelectedMode(value))}
+                    maxDistance={maxDistance}
+                    onDistanceChange={setMaxDistance}
+                    onReset={resetFilters}
+                    onClose={() => setIsFilterDrawerOpen(false)}
+                  />
+                </div>
+              </div>
             </div>
           ) : null}
 
-          <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_560px]">
+          <section className={contentGridClassName}>
             <section className="min-w-0 space-y-5">
-              {fetchAlert ? (
-                <StatusBanner
-                  tone={fetchAlert.tone}
-                  title={fetchAlert.title}
-                  description={fetchAlert.description}
-                  actionLabel="Refresh"
-                  onAction={reloadSkills}
-                  busy={isRefreshing}
-                />
-              ) : null}
-
               {actionAlert ? (
                 <StatusBanner
                   tone={actionAlert.tone}
@@ -520,47 +593,6 @@ export default function SearchPage() {
                   description={actionAlert.description}
                 />
               ) : null}
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Search results</p>
-                    <h2 className="mt-1.5 text-lg font-semibold text-slate-950">
-                      {filteredSkills.length} curated match{filteredSkills.length === 1 ? '' : 'es'}
-                    </h2>
-                    <p className="mt-1.5 text-sm text-slate-500">
-                      Browse results and review details on the right.
-                    </p>
-                  </div>
-
-                  <div className="hidden lg:flex lg:items-center lg:gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Sort by</span>
-                    <select
-                      value={sortOption}
-                      onChange={(event) => setSortOption(event.target.value)}
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 outline-none transition hover:border-slate-300"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {activeFilterChips.length ? (
-                    activeFilterChips.map((chip) => (
-                      <FilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
-                    ))
-                  ) : (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                      No filters applied yet
-                    </span>
-                  )}
-                </div>
-              </div>
 
               {loading ? (
                 <SearchResultsSkeleton />
@@ -572,6 +604,9 @@ export default function SearchPage() {
                       skill={skill}
                       isActive={skill.id === selectedSkill?.id}
                       onSelect={(selectedSkillItem) => setSelectedSkillId(selectedSkillItem.id)}
+                      onBook={handleCreateBooking}
+                      onChat={handleChat}
+                      isBooking={bookingSkillId === skill.id}
                     />
                   ))}
                 </div>
@@ -580,33 +615,8 @@ export default function SearchPage() {
               )}
             </section>
 
-            <aside className="hidden lg:block lg:self-start">
-              <div className="space-y-5 lg:sticky lg:top-24">
-                <FilterSidebar
-                  categories={SKILL_CATEGORIES}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={(value) => startTransition(() => setSelectedCategory(value))}
-                  selectedMode={selectedMode}
-                  onModeChange={(value) => startTransition(() => setSelectedMode(value))}
-                  maxDistance={maxDistance}
-                  onDistanceChange={setMaxDistance}
-                  onReset={resetFilters}
-                />
-
-                {showDetailPanel ? (
-                  <SkillDetailPanel
-                    skill={selectedSkill}
-                    onBook={handleCreateBooking}
-                    onChat={handleChat}
-                    isBooking={bookingSkillId === selectedSkill?.id}
-                    loading={loading}
-                  />
-                ) : null}
-              </div>
-            </aside>
-
             {showDetailPanel ? (
-              <div className="lg:hidden">
+              <aside className="hidden lg:block lg:self-start">
                 <SkillDetailPanel
                   skill={selectedSkill}
                   onBook={handleCreateBooking}
@@ -614,7 +624,7 @@ export default function SearchPage() {
                   isBooking={bookingSkillId === selectedSkill?.id}
                   loading={loading}
                 />
-              </div>
+              </aside>
             ) : null}
           </section>
         </PageContainer>

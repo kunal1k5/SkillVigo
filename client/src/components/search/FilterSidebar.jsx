@@ -72,10 +72,11 @@ export default function FilterSidebar({
   onDistanceChange,
   onReset,
   onClose,
-  isMobile = false,
 }) {
+  const showCloseButton = typeof onClose === 'function';
+
   return (
-    <aside className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Filters</p>
@@ -92,7 +93,7 @@ export default function FilterSidebar({
           >
             Reset
           </button>
-          {isMobile ? (
+          {showCloseButton ? (
             <button
               type="button"
               onClick={onClose}
@@ -104,7 +105,7 @@ export default function FilterSidebar({
         </div>
       </div>
 
-      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
+      <div className="mt-4 space-y-4">
         <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -113,7 +114,7 @@ export default function FilterSidebar({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="max-h-[22rem] space-y-2 overflow-y-auto pr-1">
             <button
               type="button"
               onClick={() => onCategoryChange('all')}
@@ -170,66 +171,64 @@ export default function FilterSidebar({
           </div>
         </section>
 
-        <div className="space-y-4">
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Delivery mode</p>
+            <p className="text-xs text-slate-500">Switch between online, offline, and hybrid sessions.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {DELIVERY_OPTIONS.map((option) => {
+              const isActive = selectedMode === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => onModeChange(option.id)}
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                    isActive
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold">{option.label}</span>
+                  <span className={`mt-1 block text-xs ${isActive ? 'text-slate-200' : 'text-slate-500'}`}>
+                    {option.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Delivery mode</p>
-              <p className="text-xs text-slate-500">Switch between online, offline, and hybrid sessions.</p>
+              <p className="text-sm font-semibold text-slate-900">Distance</p>
+              <p className="text-xs text-slate-500">Show options within your preferred radius.</p>
             </div>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+              Up to {maxDistance} km
+            </span>
+          </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {DELIVERY_OPTIONS.map((option) => {
-                const isActive = selectedMode === option.id;
+          <input
+            type="range"
+            min="3"
+            max="25"
+            step="1"
+            value={maxDistance}
+            onChange={(event) => onDistanceChange(Number(event.target.value))}
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-r from-blue-600 via-sky-500 to-teal-500 accent-blue-600"
+          />
 
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => onModeChange(option.id)}
-                    className={`rounded-xl border px-3 py-2.5 text-left transition ${
-                      isActive
-                        ? 'border-slate-900 bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    <span className="block text-sm font-semibold">{option.label}</span>
-                    <span className={`mt-1 block text-xs ${isActive ? 'text-slate-200' : 'text-slate-500'}`}>
-                      {option.description}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Distance</p>
-                <p className="text-xs text-slate-500">Show options within your preferred radius.</p>
-              </div>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-                Up to {maxDistance} km
-              </span>
-            </div>
-
-            <input
-              type="range"
-              min="3"
-              max="25"
-              step="1"
-              value={maxDistance}
-              onChange={(event) => onDistanceChange(Number(event.target.value))}
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-r from-blue-600 via-sky-500 to-teal-500 accent-blue-600"
-            />
-
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
-              <span>3 km</span>
-              <span>15 km</span>
-              <span>25 km</span>
-            </div>
-          </section>
-        </div>
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+            <span>3 km</span>
+            <span>15 km</span>
+            <span>25 km</span>
+          </div>
+        </section>
       </div>
     </aside>
   );

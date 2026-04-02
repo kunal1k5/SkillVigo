@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MessageSquare, LayoutDashboard, Calendar, Settings } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
 import useAuth from '../hooks/useAuth';
@@ -107,7 +108,9 @@ const ChatList = ({
   return (
     <div className="flex flex-col h-full bg-white border-r border-slate-200">
       <div className="p-4 border-b border-slate-100">
-        <h2 className="text-xl font-bold text-slate-800 mb-4">Messages</h2>
+        <h2 className="text-xl flex items-center gap-2 font-bold text-slate-800 mb-4">
+          <MessageSquare className="text-blue-500 w-5 h-5" /> Messages
+        </h2>
         <div className="relative">
           <input
             type="text"
@@ -211,8 +214,8 @@ const ChatWindow = ({
 
   if (!activeChat) return (
     <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-500">
-      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm text-slate-400">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+      <div className="text-3xl mb-4 text-slate-400">
+        <MessageSquare className="w-16 h-16 text-blue-200" />
       </div>
       <h2 className="text-xl font-semibold text-slate-700">Your Messages</h2>
       <p className="mt-2 text-sm">Select a conversation to start chatting</p>
@@ -295,7 +298,9 @@ function AuthPrompt() {
       <Navbar />
       <PageContainer className="flex flex-1 items-center justify-center py-10">
         <div className="max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-md">
-          <h1 className="text-2xl font-bold text-slate-900">Sign in to manage your chats</h1>
+          <h1 className="text-2xl flex items-center justify-center gap-3 font-bold text-slate-900">
+            <MessageSquare className="w-8 h-8 text-blue-500" /> Sign in to manage your chats
+          </h1>
           <p className="mt-3 text-sm leading-6 text-slate-500">
             Chat history, replies, and delete actions are available after you sign in to your account.
           </p>

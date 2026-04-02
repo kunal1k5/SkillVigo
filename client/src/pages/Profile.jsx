@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import useAuth from '../hooks/useAuth';
@@ -372,7 +373,9 @@ function SettingsPanel({
     <div className="space-y-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Profile Settings</h2>
+          <h2 className="text-xl flex items-center justify-center sm:justify-start gap-2 font-bold text-slate-900">
+            <Settings className="w-5 h-5 text-slate-500"/> Profile Settings
+          </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             Update the details people see on your SkillVigo profile.
           </p>

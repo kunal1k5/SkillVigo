@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Briefcase, Calendar, CheckCircle, Activity, MessageSquare, Settings, Star, DollarSign, ListOrdered, Award, Clock } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import PageContainer from '../components/layout/PageContainer';
@@ -198,7 +199,9 @@ function SkillList({ skills }) {
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-        <h2 className="text-lg font-bold text-slate-800">My Skills</h2>
+        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <Briefcase className="h-5 w-5 text-blue-500" /> My Skills
+        </h2>
         <Link
           to="/create-skill"
           className="text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors"
@@ -252,7 +255,9 @@ function BookingList({ bookings, title = 'Recent Bookings', role }) {
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+        <h2 className="text-lg flex items-center gap-2 font-bold text-slate-800">
+          <Calendar className="w-5 h-5 text-teal-500" /> {title}
+        </h2>
       </div>
       <div className="divide-y divide-slate-100 p-2">
         {bookings.map((booking) => (
@@ -297,7 +302,9 @@ function ActivityFeed({ activities }) {
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-        <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
+        <h2 className="text-lg flex items-center gap-2 font-bold text-slate-800">
+          <Activity className="w-5 h-5 text-purple-500" /> Recent Activity
+        </h2>
       </div>
       <div className="divide-y divide-slate-100 p-4">
         {activities.map((activity) => (
@@ -328,7 +335,9 @@ function MessageCenter({ conversations }) {
     <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
       <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
         <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-slate-900">Recent Messages</h2>
+          <h2 className="text-lg flex items-center gap-2 font-bold text-slate-900">
+            <MessageSquare className="w-5 h-5 text-indigo-500" /> Recent Messages
+          </h2>
         </div>
         <div className="divide-y divide-slate-100">
           {conversations.map((conversation) => (
@@ -407,7 +416,9 @@ function SettingsPanel({ currentUser, formData, onChange, onSubmit, saveMessage 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-900">Account Settings</h2>
+        <h2 className="text-xl flex items-center gap-2 font-bold text-slate-900">
+          <Settings className="w-6 h-6 text-slate-600" /> Account Settings
+        </h2>
         <p className="mt-2 text-sm text-slate-500">
           Update the profile details that appear around your SkillVigo account.
         </p>

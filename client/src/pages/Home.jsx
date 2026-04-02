@@ -150,7 +150,7 @@ export default function Home() {
       <main className="min-h-screen bg-transparent pb-16 pt-6">
         <PageContainer className="space-y-6">
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr_300px]">
-            <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
               <SidebarLeft
                 user={user}
                 stats={stats}
