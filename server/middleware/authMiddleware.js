@@ -1,27 +1,41 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { sanitizeUser } from '../utils/auth.js';
 
-export async function protect(req, res, next) {
-  const authHeader = req.headers.authorization || '';
-
-  if (!authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Not authorized. Missing bearer token.' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
+export const protect = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    const authHeader = req.headers.authorization || '';
 
-    if (!user) {
-      return res.status(401).json({ error: 'Not authorized. User no longer exists.' });
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authorization token is missing.',
+      });
     }
 
-    req.user = sanitizeUser(user);
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: 'JWT_SECRET is not configured.',
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized access.',
+      });
+    }
+
+    req.user = user;
     return next();
   } catch (error) {
-    return res.status(401).json({ error: 'Not authorized. Token is invalid or expired.' });
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired token.',
+    });
   }
-}
+};

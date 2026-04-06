@@ -1,21 +1,16 @@
 import mongoose from 'mongoose';
 
-export async function connectDB() {
-  const { MONGODB_URI } = process.env;
+const connectDB = async () => {
+  const { MONGO_URI } = process.env;
 
-  if (!MONGODB_URI) {
-    throw Object.assign(new Error('MONGODB_URI is required to start the server'), {
-      status: 500,
-    });
+  if (!MONGO_URI) {
+    throw new Error('MONGO_URI is not defined in the environment');
   }
 
-  if (mongoose.connection.readyState === 1) {
-    return mongoose.connection;
-  }
+  const connection = await mongoose.connect(MONGO_URI);
+  console.log(`MongoDB connected: ${connection.connection.host}`);
 
-  await mongoose.connect(MONGODB_URI);
+  return connection;
+};
 
-  console.log(`MongoDB connected: ${mongoose.connection.host}`);
-
-  return mongoose.connection;
-}
+export default connectDB;

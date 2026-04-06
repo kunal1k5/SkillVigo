@@ -29,8 +29,15 @@ api.interceptors.response.use(
       emitAuthCleared();
     }
 
-    const message =
+    const serverMessage =
+      error.response?.data?.message ||
       error.response?.data?.error ||
+      '';
+    const details = Array.isArray(error.response?.data?.details)
+      ? error.response.data.details.join(' ')
+      : '';
+    const message =
+      [serverMessage, details].filter(Boolean).join(' ') ||
       error.message ||
       'Something went wrong while talking to the server.';
 

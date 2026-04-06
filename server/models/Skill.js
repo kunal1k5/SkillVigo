@@ -1,36 +1,47 @@
-/**
- * Mongoose Schema: Skill
- * 
- * Fields:
- * - title: Skill name
- * - description: Detailed description
- * - instructor: Reference to User
- * - category: Skill category
- * - price: Per-session price
- * - duration: Session duration (minutes)
- * - rating: Average rating
- * - reviews: Review count
- * - image: Skill image URL
- * - tags: Search tags
- * - availability: Available time slots
- * - isActive: Listing status
- * - createdAt: Timestamp
- */
+import mongoose from 'mongoose';
 
-// const skillSchema = new Schema({
-//   title: { type: String, required: true },
-//   description: String,
-//   instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-//   category: String,
-//   price: Number,
-//   duration: Number,
-//   rating: Number,
-//   reviews: Number,
-//   image: String,
-//   tags: [String],
-//   availability: [{ day: String, slots: [String] }],
-//   isActive: { type: Boolean, default: true },
-//   createdAt: { type: Date, default: Date.now },
-// });
+const skillSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  category: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  experience: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  location: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-// export default model('Skill', skillSchema);
+const Skill = mongoose.model('Skill', skillSchema);
+
+export default Skill;

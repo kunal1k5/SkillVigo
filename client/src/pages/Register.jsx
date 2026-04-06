@@ -393,23 +393,17 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!formData.country || !formData.state || !formData.city || !formData.fullAddress.trim()) {
-      setError('Please complete your country, state, city, and full address before registering.');
-      return;
-    }
-
     try {
+      const resolvedLocation =
+        formData.fullAddress.trim() || buildLocationLabel(formData) || '';
+
       const user = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role,
         phone: formData.phone,
-        country: formData.country,
-        state: formData.state,
-        city: formData.city,
-        fullAddress: formData.fullAddress,
-        location: buildLocationLabel(formData),
+        location: resolvedLocation,
       });
 
       navigate(getDefaultRouteForRole(user.role), { replace: true });
@@ -502,7 +496,7 @@ export default function RegisterPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+91 98765 43210"
-                  required
+                  required={false}
                   icon={Icons.phone}
                 />
                 <div className="rounded-[26px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">
@@ -538,7 +532,7 @@ export default function RegisterPage() {
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Location details</p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Pick from suggestions or type manually, then add the full address.
+                      Optional: add a location to help local discovery, or leave it blank and continue.
                     </p>
                   </div>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
@@ -552,7 +546,7 @@ export default function RegisterPage() {
                     name="country"
                     value={formData.country}
                     onChange={handleChange}
-                    required
+                    required={false}
                     icon={Icons.globe}
                     options={countryOptions}
                     placeholder="Choose or type country"
@@ -562,7 +556,7 @@ export default function RegisterPage() {
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
-                    required
+                    required={false}
                     icon={Icons.mapPin}
                     options={stateOptions}
                     placeholder={formData.country ? 'Choose or type state' : 'Type state'}
@@ -572,7 +566,7 @@ export default function RegisterPage() {
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
-                    required
+                    required={false}
                     icon={Icons.mapPin}
                     options={cityOptions}
                     placeholder={formData.state ? 'Choose or type city' : 'Type city'}
@@ -585,7 +579,7 @@ export default function RegisterPage() {
                   value={formData.fullAddress}
                   onChange={handleChange}
                   placeholder="House number, street, area, landmark, postal code..."
-                  required
+                  required={false}
                   rows={4}
                   icon={Icons.mapPin}
                 />
