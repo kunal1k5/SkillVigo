@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import skillRoutes from './routes/skillRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
+import { isEmailConfigured } from './utils/email.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +38,12 @@ const startServer = async () => {
   }
 
   await connectDB();
+
+  if (!isEmailConfigured()) {
+    console.warn(
+      'Password reset emails are disabled until CLIENT_URL, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM are added to server/.env.',
+    );
+  }
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

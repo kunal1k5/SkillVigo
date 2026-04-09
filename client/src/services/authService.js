@@ -11,3 +11,11 @@ export function loginUser(payload) {
 export function getCurrentUser() {
   return api.get('/auth/me').then((response) => response.data);
 }
+
+export function requestPasswordReset(payload) {
+  return api.post('/auth/forgot-password', payload).then((response) => response.data);
+}
+
+export function resetPassword(token, payload) {
+  return api.post(`/auth/reset-password/${token}`, payload).then((response) => response.data);
+}

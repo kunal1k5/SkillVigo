@@ -6,10 +6,12 @@ import BookingPage from '../pages/BookingPage';
 import ChatPage from '../pages/ChatPage';
 import CreateSkill from '../pages/CreateSkill';
 import Dashboard from '../pages/Dashboard';
+import ForgotPassword from '../pages/ForgotPassword';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Profile from '../pages/Profile';
 import Register from '../pages/Register';
+import ResetPassword from '../pages/ResetPassword';
 import SearchPage from '../pages/SearchPage';
 
 function NotFound() {
@@ -38,6 +40,8 @@ export default function AppRoutes() {
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>

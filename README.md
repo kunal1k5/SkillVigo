@@ -26,8 +26,14 @@ Create [server/.env](f:/SkillVigo/server/.env) from [server/.env.example](f:/Ski
 ```env
 PORT=5000
 CLIENT_URL=http://localhost:5173
-MONGODB_URI=mongodb://127.0.0.1:27017/skillvigo
+MONGO_URI=mongodb://127.0.0.1:27017/skillvigo
 JWT_SECRET=replace-this-with-a-long-random-secret
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=yourgmail@gmail.com
+SMTP_PASS=your-16-character-gmail-app-password
+SMTP_FROM=SkillVigo <yourgmail@gmail.com>
 ```
 
 Install and run:
@@ -65,6 +71,8 @@ The server bootstraps this demo user so the seeded marketplace, booking, and cha
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password/:token`
 - `GET /api/auth/me`
 - `GET /api/skills`
 - `POST /api/skills`
@@ -79,3 +87,4 @@ The server bootstraps this demo user so the seeded marketplace, booking, and cha
 - Legacy third-party auth code has been fully removed from the runtime codebase
 - Protected routes now rely on JWT middleware
 - Existing skill, booking, chat, review, and admin flows now use the authenticated Mongo user
+- Gmail sending requires a Google App Password on the SMTP account; regular account passwords will not work
