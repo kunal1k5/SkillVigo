@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import dns from 'node:dns';
 
 let connectionPromise = null;
 
@@ -9,6 +10,28 @@ function parseTimeout(value, fallback) {
 
 function getDbTimeoutMs() {
   return parseTimeout(process.env.MONGO_CONNECT_TIMEOUT_MS, 10000);
+}
+
+function getMongoDnsServers() {
+  const configuredServers = `${process.env.MONGO_DNS_SERVERS || ''}`
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (configuredServers.length) {
+    return configuredServers;
+  }
+
+  return ['8.8.8.8', '1.1.1.1'];
+}
+
+function shouldRetryWithCustomDns(error, mongoUri = '') {
+  const message = `${error?.message || ''}`;
+
+  return (
+    `${mongoUri}`.startsWith('mongodb+srv://') &&
+    (error?.code === 'ECONNREFUSED' || message.includes('querySrv ECONNREFUSED'))
+  );
 }
 
 const connectDB = async () => {
@@ -24,14 +47,30 @@ const connectDB = async () => {
 
   if (!connectionPromise) {
     const timeoutMs = getDbTimeoutMs();
+    const connectOptions = {
+      serverSelectionTimeoutMS: timeoutMs,
+      connectTimeoutMS: timeoutMs,
+      socketTimeoutMS: timeoutMs,
+      maxPoolSize: 10,
+      family: 4,
+    };
+
+    const connect = () => mongoose.connect(MONGO_URI, connectOptions);
 
     connectionPromise = mongoose
-      .connect(MONGO_URI, {
-        serverSelectionTimeoutMS: timeoutMs,
-        connectTimeoutMS: timeoutMs,
-        socketTimeoutMS: timeoutMs,
-        maxPoolSize: 10,
-        family: 4,
+      .connect(MONGO_URI, connectOptions)
+      .catch(async (error) => {
+        if (!shouldRetryWithCustomDns(error, MONGO_URI)) {
+          throw error;
+        }
+
+        const dnsServers = getMongoDnsServers();
+        dns.setServers(dnsServers);
+        console.warn(
+          `Primary DNS SRV lookup failed for MongoDB. Retrying with custom DNS servers: ${dnsServers.join(', ')}`,
+        );
+
+        return connect();
       })
       .catch((error) => {
         connectionPromise = null;

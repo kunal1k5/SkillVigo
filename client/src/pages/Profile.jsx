@@ -5,6 +5,7 @@ import Loader from '../components/common/Loader';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import useAuth from '../hooks/useAuth';
+import { deleteSkill as deleteSkillRequest } from '../services/skillService';
 import {
   getCurrentUserProfile,
   getUserProfile,
@@ -169,7 +170,7 @@ const StatsSection = ({ stats }) => (
   </div>
 );
 
-const SkillCard = ({ skill }) => (
+const SkillCard = ({ skill, canManage = false, onDeleteSkill, deletingSkillId = '' }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all group">
     <div className="flex justify-between items-start gap-4 mb-4">
       <h3 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
@@ -183,9 +184,20 @@ const SkillCard = ({ skill }) => (
       <span className="text-sm font-medium text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md">
         {skill.experience}
       </span>
-      <Link to="/bookings" className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-        Book Session
-      </Link>
+      {canManage ? (
+        <button
+          type="button"
+          onClick={() => onDeleteSkill?.(skill)}
+          disabled={`${deletingSkillId}` === `${skill.id}`}
+          className="rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {`${deletingSkillId}` === `${skill.id}` ? 'Deleting...' : 'Delete'}
+        </button>
+      ) : (
+        <Link to="/bookings" className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+          Book Session
+        </Link>
+      )}
     </div>
   </div>
 );
@@ -595,6 +607,8 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [settingsForm, setSettingsForm] = useState(() => createSettingsForm(profile));
   const [saveState, setSaveState] = useState({ tone: 'success', message: '' });
+  const [skillActionState, setSkillActionState] = useState({ tone: 'success', message: '' });
+  const [deletingSkillId, setDeletingSkillId] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
   const photoInputRef = useRef(null);
 
@@ -686,6 +700,20 @@ export default function Profile() {
       window.clearTimeout(timeoutId);
     };
   }, [saveState.message]);
+
+  useEffect(() => {
+    if (!skillActionState.message) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSkillActionState({ tone: 'success', message: '' });
+    }, 2600);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [skillActionState.message]);
 
   const handleSettingsChange = (event) => {
     const { name, value } = event.target;
@@ -779,6 +807,69 @@ export default function Profile() {
         tone: 'error',
         message: requestError.message || 'Could not save your profile settings.',
       });
+    }
+  };
+
+  const handleDeleteSkill = async (skill) => {
+    if (!skill?.id || deletingSkillId || !isOwnProfile) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setSkillActionState({
+        tone: 'error',
+        message: 'Sign in required before deleting skills.',
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${skill.title}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    const targetId = `${skill.id}`;
+    setDeletingSkillId(targetId);
+    setSkillActionState({ tone: 'success', message: '' });
+
+    try {
+      await deleteSkillRequest(targetId);
+
+      setProfileData((currentState) => {
+        if (!currentState) {
+          return currentState;
+        }
+
+        const nextSkills = (currentState.skills || []).filter(
+          (item) => `${item.id || item._id}` !== targetId,
+        );
+
+        return {
+          ...currentState,
+          skills: nextSkills,
+          totalSkills: nextSkills.length,
+        };
+      });
+
+      setSkillActionState({
+        tone: 'success',
+        message: `${skill.title} deleted successfully.`,
+      });
+
+      try {
+        const refreshedProfile = await getCurrentUserProfile();
+        setProfileData(refreshedProfile);
+      } catch {
+        // Keep optimistic UI state if silent refresh fails.
+      }
+    } catch (requestError) {
+      setSkillActionState({
+        tone: 'error',
+        message: requestError.message || 'Could not delete this skill right now.',
+      });
+    } finally {
+      setDeletingSkillId('');
     }
   };
 
@@ -900,10 +991,31 @@ export default function Profile() {
         <div className="min-h-[300px]">
           {/* SKILLS TAB */}
           {activeTab === 'skills' && profile.showSkillsSection && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {profile.skills.map(skill => (
-                <SkillCard key={skill.id} skill={skill} />
-              ))}
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {skillActionState.message ? (
+                <div
+                  className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+                    skillActionState.tone === 'error'
+                      ? 'border-rose-200 bg-rose-50 text-rose-700'
+                      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {skillActionState.message}
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {profile.skills.map(skill => (
+                  <SkillCard
+                    key={skill.id}
+                    skill={skill}
+                    canManage={isOwnProfile && profile.role === 'provider'}
+                    onDeleteSkill={handleDeleteSkill}
+                    deletingSkillId={deletingSkillId}
+                  />
+                ))}
+              </div>
+
               {profile.skills.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl">
                   <p>No skills listed yet.</p>
