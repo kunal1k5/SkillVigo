@@ -13,8 +13,8 @@ const router = express.Router();
 
 router.get('/', getAllSkills);
 router.get('/:id', getSkillById);
-router.post('/', protect, requireRole('provider'), createSkill);
-router.put('/:id', protect, requireRole('provider'), updateSkill);
-router.delete('/:id', protect, requireRole('provider'), deleteSkill);
+router.post('/', protect, requireRole('provider', 'admin'), createSkill);
+router.put('/:id', protect, requireRole('provider', 'admin'), updateSkill);
+router.delete('/:id', protect, requireRole('provider', 'admin'), deleteSkill);
 
 export default router;

@@ -21,6 +21,16 @@ const skillSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  mode: {
+    type: String,
+    trim: true,
+    default: 'Local meetup',
+  },
+  level: {
+    type: String,
+    trim: true,
+    default: 'all levels',
+  },
   price: {
     type: Number,
     required: true,
@@ -35,6 +45,20 @@ const skillSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+  },
+  availability: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  serviceRadius: {
+    type: String,
+    trim: true,
+    default: '10 km',
+  },
+  tags: {
+    type: [String],
+    default: [],
   },
   createdAt: {
     type: Date,

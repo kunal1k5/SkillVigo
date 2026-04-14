@@ -5,9 +5,67 @@ import SkillForm from '../components/skill/SkillForm';
 import { SKILL_CATEGORIES, SUGGESTED_SKILL_NAMES } from '../components/skill/skillCatalog';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
+import PageContainer from '../components/layout/PageContainer';
 import { createSkill } from '../services/skillService';
 
+function normalizeText(value) {
+  return `${value || ''}`.trim();
+}
+
+function normalizeTags(rawTags) {
+  if (Array.isArray(rawTags)) {
+    return rawTags.map((item) => normalizeText(item)).filter(Boolean);
+  }
+
+  return normalizeText(rawTags)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildSkillPayload(skillData = {}) {
+  return {
+    title: normalizeText(skillData.title),
+    description: normalizeText(skillData.description),
+    category: normalizeText(skillData.category),
+    location: normalizeText(skillData.location),
+    mode: normalizeText(skillData.mode),
+    level: normalizeText(skillData.level),
+    availability: normalizeText(skillData.availability),
+    serviceRadius: normalizeText(skillData.serviceRadius),
+    price: Number(skillData.price),
+    experience: Number(skillData.experience),
+    tags: normalizeTags(skillData.tags),
+    imageFileName: normalizeText(skillData.imageFileName),
+  };
+}
+
+function validateSkillPayload(payload) {
+  if (
+    !payload.title ||
+    !payload.description ||
+    !payload.category ||
+    !payload.location ||
+    !Number.isFinite(payload.price) ||
+    !Number.isFinite(payload.experience)
+  ) {
+    return 'Title, description, category, location, price, and experience are required.';
+  }
+
+  if (payload.price < 0) {
+    return 'Price must be 0 or more.';
+  }
+
+  if (payload.experience < 0) {
+    return 'Experience must be 0 or more.';
+  }
+
+  return '';
+}
+
 function buildPreviewSkill(draftSkill) {
+  const tags = normalizeTags(draftSkill.tags);
+
   return {
     id: 'preview-skill',
     title: draftSkill.title || 'Your skill title will appear here',
@@ -17,20 +75,14 @@ function buildPreviewSkill(draftSkill) {
     price: Number(draftSkill.price || 0),
     mode: draftSkill.mode || 'Local meetup',
     level: draftSkill.level || 'Beginner',
-    distanceLabel: draftSkill.serviceRadius ? `${draftSkill.serviceRadius} service range` : 'Nearby service',
-    area: draftSkill.area || 'Your locality',
+    distanceLabel: draftSkill.serviceRadius ? `Service radius: ${draftSkill.serviceRadius}` : 'Nearby service',
+    area: draftSkill.location || 'Your locality',
     responseTime: 'Quick local replies',
     availability: draftSkill.availability || 'Add your slots',
-    accent: 'linear-gradient(135deg, #0f172a 0%, #2563eb 100%)',
     description:
       draftSkill.description ||
       'People near you will see this skill summary first, so keep it practical and trust-building.',
-    tags: draftSkill.tags
-      ? draftSkill.tags
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean)
-      : ['Local skill', 'Community', 'Nearby'],
+    tags: tags.length ? tags : ['Local skill', 'Community', 'Nearby'],
   };
 }
 
@@ -43,14 +95,23 @@ export default function CreateSkill() {
   const previewSkill = buildPreviewSkill(draftSkill);
 
   const handleSubmit = async (skillData) => {
-    setStatusMessage('Saving your skill to the backend...');
+    const payload = buildSkillPayload(skillData);
+    const validationError = validateSkillPayload(payload);
+
+    if (validationError) {
+      setErrorMessage(validationError);
+      setStatusMessage('');
+      return;
+    }
+
+    setStatusMessage('Publishing your listing...');
     setErrorMessage('');
 
     try {
-      const createdSkill = await createSkill(skillData);
+      const createdSkill = await createSkill(payload);
       setSavedSkill(createdSkill);
       setStatusMessage(
-        `${createdSkill.title} saved successfully. Search page par refresh ke baad ye listing dikhegi.`,
+        `${createdSkill.title} is live now. Search page par refresh ke baad sab users ko listing dikhegi.`,
       );
     } catch (requestError) {
       setErrorMessage(requestError.message);
@@ -61,231 +122,103 @@ export default function CreateSkill() {
   return (
     <>
       <Navbar />
+      <main className="min-h-screen bg-transparent pb-16 pt-4">
+        <PageContainer>
+          <div className="grid gap-6">
+            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:p-7">
+              <div className="absolute -left-20 -top-20 h-44 w-44 rounded-full bg-emerald-100/80 blur-2xl" />
+              <div className="absolute -bottom-16 right-0 h-36 w-36 rounded-full bg-sky-100/70 blur-2xl" />
 
-      <style>
-        {`
-          .create-skill-page-root {
-            min-height: calc(100vh - 73px);
-            background:
-              radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 30%),
-              radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 26%),
-              linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
-          }
+              <div className="relative grid gap-4">
+                <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+                  Provider workspace
+                </span>
 
-          .create-skill-shell {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 30px 16px 56px;
-            display: grid;
-            gap: 24px;
-            color: #0f172a;
-            font-family: "Manrope", "Segoe UI", sans-serif;
-          }
+                <div className="grid gap-2">
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: 'clamp(1.7rem, 4vw, 2.7rem)',
+                      lineHeight: 1.08,
+                      fontFamily: 'var(--sv-font-display)',
+                      color: '#0f172a',
+                    }}
+                  >
+                    Publish a clear skill listing people can trust instantly.
+                  </h1>
+                  <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-[15px]">
+                    Is page ka flow backend schema ke saath aligned hai, isliye form submit predictable rahega aur
+                    listing search feed me sahi render hogi.
+                  </p>
+                </div>
 
-          .create-skill-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 360px;
-            gap: 24px;
-            align-items: start;
-          }
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to="/search"
+                    className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    Open marketplace
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Back to profile
+                  </Link>
+                </div>
 
-          @media (max-width: 980px) {
-            .create-skill-grid {
-              grid-template-columns: 1fr;
-            }
-          }
-
-          @media (max-width: 640px) {
-            .create-skill-shell {
-              padding: 22px 14px 42px;
-            }
-          }
-        `}
-      </style>
-
-      <main className="create-skill-page-root">
-        <div className="create-skill-shell">
-          <section
-            style={{
-              position: 'relative',
-              overflow: 'hidden',
-              borderRadius: '32px',
-              padding: 'clamp(24px, 4vw, 38px)',
-              background: 'linear-gradient(135deg, #020617 0%, #1d4ed8 48%, #0f766e 100%)',
-              color: '#f8fafc',
-              boxShadow: '0 28px 60px rgba(15, 23, 42, 0.2)',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: '-40% auto auto -10%',
-                width: '280px',
-                height: '280px',
-                borderRadius: '999px',
-                background: 'rgba(96, 165, 250, 0.2)',
-                filter: 'blur(8px)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                inset: 'auto -6% -34% auto',
-                width: '300px',
-                height: '300px',
-                borderRadius: '999px',
-                background: 'rgba(45, 212, 191, 0.16)',
-                filter: 'blur(12px)',
-              }}
-            />
-
-            <div style={{ position: 'relative', display: 'grid', gap: '18px' }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  width: 'fit-content',
-                  padding: '8px 14px',
-                  borderRadius: '999px',
-                  border: '1px solid rgba(248, 250, 252, 0.18)',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Let people discover your skill
-              </span>
-
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: 'clamp(2rem, 5vw, 3.6rem)',
-                  lineHeight: 1.05,
-                  maxWidth: '11ch',
-                  fontFamily: '"Sora", "Segoe UI", sans-serif',
-                }}
-              >
-                Any normal person can add a useful skill here.
-              </h1>
-
-              <p
-                style={{
-                  margin: 0,
-                  maxWidth: '68ch',
-                  color: 'rgba(248, 250, 252, 0.82)',
-                  lineHeight: 1.75,
-                }}
-              >
-                Ab ye form backend se connected hai. Jo skill tum save karoge woh server-side data store me persist ho jayegi.
-              </p>
-
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <Link
-                  to="/search"
-                  style={{
-                    textDecoration: 'none',
-                    color: '#0f172a',
-                    fontWeight: 800,
-                    background: '#ffffff',
-                    borderRadius: '999px',
-                    padding: '12px 18px',
-                    boxShadow: '0 14px 28px rgba(15, 23, 42, 0.2)',
-                  }}
-                >
-                  Explore listed skills
-                </Link>
-                <Link
-                  to="/chat"
-                  style={{
-                    textDecoration: 'none',
-                    color: '#f8fafc',
-                    fontWeight: 700,
-                    borderRadius: '999px',
-                    padding: '12px 18px',
-                    border: '1px solid rgba(248, 250, 252, 0.28)',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                  }}
-                >
-                  Open local chat
-                </Link>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Step 1</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">Fill required fields</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Step 2</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">Publish to backend</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Step 3</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">Visible in search feed</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="create-skill-grid">
-            <div style={{ display: 'grid', gap: '16px' }}>
+            <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="grid gap-4">
               {statusMessage ? (
-                <section
-                  style={{
-                    borderRadius: '22px',
-                    padding: '16px 18px',
-                    background: 'rgba(15, 118, 110, 0.08)',
-                    border: '1px solid rgba(15, 118, 110, 0.14)',
-                    color: '#0f766e',
-                    fontWeight: 700,
-                  }}
-                >
+                <section className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm font-semibold text-emerald-800">
                   {statusMessage}
                 </section>
               ) : null}
 
               {errorMessage ? (
-                <section
-                  style={{
-                    borderRadius: '22px',
-                    padding: '16px 18px',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.14)',
-                    color: '#b91c1c',
-                    fontWeight: 700,
-                  }}
-                >
+                <section className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm font-semibold text-red-700">
                   {errorMessage}
                 </section>
               ) : null}
 
               <SkillForm onSubmit={handleSubmit} onDataChange={setDraftSkill} />
-            </div>
+              </div>
 
-            <aside style={{ display: 'grid', gap: '18px' }}>
+              <aside className="grid content-start gap-4 xl:sticky xl:top-24 xl:self-start">
               {savedSkill ? (
-                <section
-                  style={{
-                    borderRadius: '28px',
-                    padding: '22px',
-                    background: 'rgba(15, 118, 110, 0.08)',
-                    border: '1px solid rgba(15, 118, 110, 0.14)',
-                    boxShadow: '0 18px 36px rgba(15, 23, 42, 0.05)',
-                    display: 'grid',
-                    gap: '8px',
-                  }}
-                >
+                <section className="grid gap-2 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-[0_16px_32px_rgba(15,118,110,0.08)]">
                   <strong style={{ color: '#0f766e', fontSize: '1.05rem' }}>Skill saved in backend</strong>
                   <p style={{ margin: 0, color: '#115e59', lineHeight: 1.7 }}>
-                    `{savedSkill.title}` API ke through save ho chuki hai. Search page se isse verify kar sakte ho.
+                    {savedSkill.title} API ke through save ho chuki hai. Search page se isse verify kar sakte ho.
                   </p>
                 </section>
               ) : null}
 
-              <section
-                style={{
-                  borderRadius: '28px',
-                  padding: '22px',
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid rgba(148, 163, 184, 0.18)',
-                  boxShadow: '0 18px 36px rgba(15, 23, 42, 0.06)',
-                  display: 'grid',
-                  gap: '16px',
-                }}
-              >
+              <section className="grid gap-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
                 <div style={{ display: 'grid', gap: '6px' }}>
                   <h2
                     style={{
                       margin: 0,
                       color: '#0f172a',
                       fontSize: '1.2rem',
-                      fontFamily: '"Sora", "Segoe UI", sans-serif',
+                      fontFamily: 'var(--sv-font-display)',
                     }}
                   >
                     Live preview
@@ -298,17 +231,7 @@ export default function CreateSkill() {
                 <SkillCard skill={previewSkill} actionLabel="Preview only" />
               </section>
 
-              <section
-                style={{
-                  borderRadius: '28px',
-                  padding: '22px',
-                  background: 'rgba(255, 255, 255, 0.88)',
-                  border: '1px solid rgba(148, 163, 184, 0.18)',
-                  boxShadow: '0 18px 36px rgba(15, 23, 42, 0.06)',
-                  display: 'grid',
-                  gap: '14px',
-                }}
-              >
+              <section className="grid gap-3 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
                 <div style={{ display: 'grid', gap: '6px' }}>
                   <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem' }}>Good starter skill names</h3>
                   <p style={{ margin: 0, color: '#475569', lineHeight: 1.6 }}>
@@ -316,17 +239,11 @@ export default function CreateSkill() {
                   </p>
                 </div>
 
-                <div style={{ display: 'grid', gap: '10px' }}>
-                  {SKILL_CATEGORIES.map((category) => (
+                <div className="grid gap-2.5">
+                  {SKILL_CATEGORIES.slice(0, 4).map((category) => (
                     <div
                       key={category.id}
-                      style={{
-                        borderRadius: '18px',
-                        padding: '14px 16px',
-                        background: 'rgba(15, 23, 42, 0.04)',
-                        display: 'grid',
-                        gap: '8px',
-                      }}
+                      className="grid gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-3.5"
                     >
                       <strong style={{ color: '#0f172a' }}>{category.label}</strong>
                       <span style={{ color: '#475569', lineHeight: 1.6 }}>
@@ -337,17 +254,7 @@ export default function CreateSkill() {
                 </div>
               </section>
 
-              <section
-                style={{
-                  borderRadius: '28px',
-                  padding: '22px',
-                  background: 'rgba(15, 23, 42, 0.96)',
-                  color: '#f8fafc',
-                  boxShadow: '0 18px 36px rgba(15, 23, 42, 0.16)',
-                  display: 'grid',
-                  gap: '12px',
-                }}
-              >
+              <section className="grid gap-3 rounded-3xl border border-slate-200 bg-slate-900 p-5 text-slate-50 shadow-[0_16px_36px_rgba(15,23,42,0.22)]">
                 <div style={{ display: 'grid', gap: '6px' }}>
                   <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Quick naming guide</h3>
                   <p style={{ margin: 0, color: 'rgba(248, 250, 252, 0.72)', lineHeight: 1.6 }}>
@@ -355,26 +262,21 @@ export default function CreateSkill() {
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="flex flex-wrap gap-2">
                   {SUGGESTED_SKILL_NAMES.slice(0, 8).map((name) => (
                     <span
                       key={name}
-                      style={{
-                        borderRadius: '999px',
-                        padding: '8px 11px',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                      }}
+                      className="rounded-full bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-slate-100"
                     >
                       {name}
                     </span>
                   ))}
                 </div>
               </section>
-            </aside>
-          </section>
-        </div>
+              </aside>
+            </section>
+          </div>
+        </PageContainer>
       </main>
 
       <Footer />

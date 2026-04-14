@@ -42,7 +42,13 @@ export function formatDistanceLabel(distanceKm) {
 }
 
 export function getProviderName(skill = {}) {
-  return skill.instructor?.name || skill.instructorName || skill.providerName || 'SkillVigo Expert';
+  return (
+    skill.instructor?.name ||
+    skill.provider?.name ||
+    skill.instructorName ||
+    skill.providerName ||
+    'SkillVigo Expert'
+  );
 }
 
 export function getProviderInitials(name = '') {

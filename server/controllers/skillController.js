@@ -8,6 +8,21 @@ const normalizeNumber = (value) => {
   return Number.isFinite(parsedValue) ? parsedValue : null;
 };
 
+const normalizeStringArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeString(item)).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
 const buildSkillResponse = (skill) => {
   let provider = null;
 
@@ -29,9 +44,14 @@ const buildSkillResponse = (skill) => {
     title: skill.title,
     description: skill.description,
     category: skill.category,
+    mode: skill.mode,
+    level: skill.level,
     price: skill.price,
     experience: skill.experience,
     location: skill.location,
+    availability: skill.availability,
+    serviceRadius: skill.serviceRadius,
+    tags: Array.isArray(skill.tags) ? skill.tags : [],
     createdAt: skill.createdAt,
     provider,
   };
@@ -93,8 +113,13 @@ export const createSkill = async (req, res, next) => {
       description: normalizeString(req.body?.description),
       category: normalizeString(req.body?.category),
       price: normalizeNumber(req.body?.price),
-      experience: normalizeNumber(req.body?.experience),
-      location: normalizeString(req.body?.location),
+      experience: normalizeNumber(req.body?.experience ?? req.body?.duration),
+      location: normalizeString(req.body?.location ?? req.body?.area),
+      mode: normalizeString(req.body?.mode) || 'Local meetup',
+      level: normalizeString(req.body?.level) || 'all levels',
+      availability: normalizeString(req.body?.availability),
+      serviceRadius: normalizeString(req.body?.serviceRadius) || '10 km',
+      tags: normalizeStringArray(req.body?.tags),
     };
 
     const validationError = validateCreatePayload(payload);
@@ -183,7 +208,10 @@ export const updateSkill = async (req, res, next) => {
       });
     }
 
-    if (skill.userId.toString() !== req.user.id) {
+    const isOwner = skill.userId.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'You are not allowed to update this skill.',
@@ -198,8 +226,24 @@ export const updateSkill = async (req, res, next) => {
       category: req.body?.category !== undefined ? normalizeString(req.body.category) : undefined,
       price: req.body?.price !== undefined ? normalizeNumber(req.body.price) : undefined,
       experience:
-        req.body?.experience !== undefined ? normalizeNumber(req.body.experience) : undefined,
-      location: req.body?.location !== undefined ? normalizeString(req.body.location) : undefined,
+        req.body?.experience !== undefined
+          ? normalizeNumber(req.body.experience)
+          : req.body?.duration !== undefined
+            ? normalizeNumber(req.body.duration)
+            : undefined,
+      location:
+        req.body?.location !== undefined
+          ? normalizeString(req.body.location)
+          : req.body?.area !== undefined
+            ? normalizeString(req.body.area)
+            : undefined,
+      mode: req.body?.mode !== undefined ? normalizeString(req.body.mode) : undefined,
+      level: req.body?.level !== undefined ? normalizeString(req.body.level) : undefined,
+      availability:
+        req.body?.availability !== undefined ? normalizeString(req.body.availability) : undefined,
+      serviceRadius:
+        req.body?.serviceRadius !== undefined ? normalizeString(req.body.serviceRadius) : undefined,
+      tags: req.body?.tags !== undefined ? normalizeStringArray(req.body.tags) : undefined,
     };
 
     const validationError = validateUpdatePayload(normalizedFields);
@@ -249,7 +293,10 @@ export const deleteSkill = async (req, res, next) => {
       });
     }
 
-    if (skill.userId.toString() !== req.user.id) {
+    const isOwner = skill.userId.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'You are not allowed to delete this skill.',

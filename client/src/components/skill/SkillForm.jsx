@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import Button from '../common/Button';
 import Input from '../common/Input';
 import { SKILL_CATEGORIES } from './skillCatalog';
 
@@ -7,11 +6,11 @@ const defaultData = {
   title: '',
   description: '',
   category: SKILL_CATEGORIES[0].label,
-  level: 'beginner',
+  level: 'all levels',
   mode: 'Local meetup',
   price: '',
-  duration: '',
-  area: '',
+  experience: '',
+  location: '',
   serviceRadius: '10 km',
   availability: '',
   tags: '',
@@ -28,15 +27,13 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
         title: initialData.title || '',
         description: initialData.description || '',
         category: initialData.category || SKILL_CATEGORIES[0].label,
-        level: initialData.level || 'beginner',
+        level: initialData.level || 'all levels',
         mode: initialData.mode || 'Local meetup',
         price: initialData.price ?? '',
-        duration: initialData.duration ?? '',
-        area: initialData.area || '',
+        experience: initialData.experience ?? '',
+        location: initialData.location || initialData.area || '',
         serviceRadius: initialData.serviceRadius || '10 km',
-        availability: Array.isArray(initialData.availability)
-          ? initialData.availability.join(', ')
-          : initialData.availability || '',
+        availability: initialData.availability || '',
         tags: Array.isArray(initialData.tags) ? initialData.tags.join(', ') : initialData.tags || '',
       });
     }
@@ -69,14 +66,15 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
     setIsSubmitting(true);
 
     try {
+      const parsedPrice = Number(formData.price);
+      const parsedExperience = Number(formData.experience);
+
       await onSubmit({
         ...formData,
-        price: Number(formData.price),
-        duration: Number(formData.duration),
-        availability: formData.availability
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
+        price: Number.isFinite(parsedPrice) ? parsedPrice : 0,
+        experience: Number.isFinite(parsedExperience) ? parsedExperience : 0,
+        location: formData.location.trim(),
+        availability: formData.availability.trim(),
         tags: formData.tags
           .split(',')
           .map((value) => value.trim())
@@ -91,65 +89,36 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
   return (
     <form
       onSubmit={handleSubmit}
-      style={{
-        display: 'grid',
-        gap: '18px',
-        width: '100%',
-      }}
+      className="grid w-full gap-5"
     >
-      <section
-        style={{
-          borderRadius: '28px',
-          padding: '22px',
-          background: 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          boxShadow: '0 18px 36px rgba(15, 23, 42, 0.06)',
-          display: 'grid',
-          gap: '16px',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '6px' }}>
+      <section className="grid gap-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.06)] sm:p-6">
+        <div className="grid gap-1.5">
           <h2
             style={{
               margin: 0,
               color: '#0f172a',
-              fontSize: 'clamp(1.3rem, 3vw, 1.8rem)',
-              fontFamily: '"Sora", "Segoe UI", sans-serif',
+              fontSize: 'clamp(1.25rem, 2.3vw, 1.65rem)',
+              fontFamily: 'var(--sv-font-display)',
             }}
           >
             Add your local skill
           </h2>
-          <p style={{ margin: 0, color: '#475569', lineHeight: 1.7 }}>
-            SkillVigo par normal people bhi apni useful skill list kar sakte hain, bas title clear aur offer practical hona chahiye.
+          <p style={{ margin: 0, color: '#475569', lineHeight: 1.65 }}>
+            Clean details do cheezein improve karti hain: backend validation pass hoti hai aur search page par listing
+            easily samajh aati hai.
           </p>
         </div>
 
-        <div
-          style={{
-            borderRadius: '20px',
-            padding: '16px',
-            background: 'rgba(15, 23, 42, 0.04)',
-            display: 'grid',
-            gap: '10px',
-          }}
-        >
+        <div className="grid gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <strong style={{ color: '#0f172a' }}>{selectedCategory.label}</strong>
           <span style={{ color: '#475569', lineHeight: 1.6 }}>{selectedCategory.description}</span>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="flex flex-wrap gap-2">
             {selectedCategory.sampleSkills.map((name) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => setFormData((prev) => ({ ...prev, title: name }))}
-                style={{
-                  border: '1px solid rgba(37, 99, 235, 0.14)',
-                  borderRadius: '999px',
-                  padding: '8px 11px',
-                  background: 'rgba(37, 99, 235, 0.06)',
-                  color: '#1d4ed8',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
               >
                 {name}
               </button>
@@ -158,17 +127,7 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
         </div>
       </section>
 
-      <section
-        style={{
-          borderRadius: '28px',
-          padding: '22px',
-          background: 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          boxShadow: '0 18px 36px rgba(15, 23, 42, 0.06)',
-          display: 'grid',
-          gap: '14px',
-        }}
-      >
+      <section className="grid gap-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.06)] sm:p-6">
         <Input
           label="Skill title"
           name="title"
@@ -178,7 +137,7 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
           required
         />
 
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        <div className="grid gap-3 md:grid-cols-2">
           <label style={{ display: 'grid', gap: '6px' }}>
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>Category</span>
             <select
@@ -188,8 +147,8 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
               style={{
                 width: '100%',
                 padding: '12px 12px',
-                borderRadius: '12px',
-                border: '1px solid #d1d5db',
+                borderRadius: '16px',
+                border: '1px solid #d5dbe5',
                 fontSize: '14px',
                 color: '#111827',
                 background: '#ffffff',
@@ -212,8 +171,8 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
               style={{
                 width: '100%',
                 padding: '12px 12px',
-                borderRadius: '12px',
-                border: '1px solid #d1d5db',
+                borderRadius: '16px',
+                border: '1px solid #d5dbe5',
                 fontSize: '14px',
                 color: '#111827',
                 background: '#ffffff',
@@ -227,7 +186,7 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
           </label>
         </div>
 
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        <div className="grid gap-3 md:grid-cols-2">
           <label style={{ display: 'grid', gap: '6px' }}>
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>Delivery mode</span>
             <select
@@ -237,8 +196,8 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
               style={{
                 width: '100%',
                 padding: '12px 12px',
-                borderRadius: '12px',
-                border: '1px solid #d1d5db',
+                borderRadius: '16px',
+                border: '1px solid #d5dbe5',
                 fontSize: '14px',
                 color: '#111827',
                 background: '#ffffff',
@@ -252,16 +211,16 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
           </label>
 
           <Input
-            label="Area / locality"
-            name="area"
-            value={formData.area}
+            label="Location / locality"
+            name="location"
+            value={formData.location}
             placeholder="Example: Indirapuram"
             onChange={handleChange}
             required
           />
         </div>
 
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        <div className="grid gap-3 md:grid-cols-2">
           <Input
             label="Price"
             name="price"
@@ -274,18 +233,18 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
           />
 
           <Input
-            label="Duration (minutes)"
-            name="duration"
+            label="Experience (years)"
+            name="experience"
             type="number"
-            min="15"
-            value={formData.duration}
+            min="0"
+            value={formData.experience}
             onChange={handleChange}
-            placeholder="Example: 60"
+            placeholder="Example: 2"
             required
           />
         </div>
 
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        <div className="grid gap-3 md:grid-cols-2">
           <label style={{ display: 'grid', gap: '6px' }}>
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>Service radius</span>
             <select
@@ -295,8 +254,8 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
               style={{
                 width: '100%',
                 padding: '12px 12px',
-                borderRadius: '12px',
-                border: '1px solid #d1d5db',
+                borderRadius: '16px',
+                border: '1px solid #d5dbe5',
                 fontSize: '14px',
                 color: '#111827',
                 background: '#ffffff',
@@ -311,7 +270,7 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
           </label>
 
           <Input
-            label="Availability"
+            label="Availability text"
             name="availability"
             value={formData.availability}
             onChange={handleChange}
@@ -339,8 +298,8 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
             style={{
               width: '100%',
               padding: '12px 14px',
-              borderRadius: '14px',
-              border: '1px solid #d1d5db',
+              borderRadius: '16px',
+              border: '1px solid #d5dbe5',
               outline: 'none',
               fontSize: '14px',
               resize: 'vertical',
@@ -356,27 +315,22 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
             type="file"
             accept="image/*"
             onChange={(event) => setImageFile(event.target.files?.[0] || null)}
-            style={{ fontSize: '14px' }}
+            style={{ fontSize: '14px', color: '#334155' }}
           />
         </div>
       </section>
 
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <Button
+      <div className="flex flex-wrap items-center gap-3">
+        <button
           type="submit"
           disabled={isSubmitting}
-          style={{
-            minWidth: '160px',
-            background: 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)',
-            border: 'none',
-            boxShadow: '0 16px 28px rgba(37, 99, 235, 0.16)',
-          }}
+          className="inline-flex min-w-[170px] items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isSubmitting ? 'Saving...' : initialData ? 'Update skill' : 'Publish skill'}
-        </Button>
+        </button>
 
         <span style={{ alignSelf: 'center', color: '#475569', lineHeight: 1.6 }}>
-          Keep the title short, local area clear, and offer practical so nearby users trust it fast.
+          Required fields are mapped exactly to backend schema to avoid save errors.
         </span>
       </div>
     </form>
