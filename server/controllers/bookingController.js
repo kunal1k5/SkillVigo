@@ -141,10 +141,11 @@ function canAccessBooking(booking, currentUser) {
     return true;
   }
 
-  return (
-    normalizeObjectIdString(booking.studentId) === currentUser.id ||
-    normalizeObjectIdString(booking.instructorId) === currentUser.id
-  );
+  if (currentUser.role === 'provider') {
+    return normalizeObjectIdString(booking.instructorId) === currentUser.id;
+  }
+
+  return normalizeObjectIdString(booking.studentId) === currentUser.id;
 }
 
 function canUpdateBookingStatus(booking, currentUser, nextStatus) {
@@ -266,9 +267,9 @@ export async function getMyBookings(req, res, next) {
     const query =
       req.user.role === 'admin'
         ? {}
-        : {
-            $or: [{ studentId: req.user.id }, { instructorId: req.user.id }],
-          };
+        : req.user.role === 'provider'
+          ? { instructorId: req.user.id }
+          : { studentId: req.user.id };
 
     const bookings = await Booking.find(query)
       .populate(BOOKING_POPULATE)
@@ -296,6 +297,12 @@ export async function getBookingById(req, res, next) {
 
 export async function createBooking(req, res, next) {
   try {
+    if (!['seeker', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Only users who hire skills can create bookings from search.',
+      });
+    }
+
     const payload = req.body || {};
     const skillId = String(payload.skillId || '').trim();
 

@@ -6,6 +6,26 @@ import {
 } from '../utils/verification.js';
 import { sanitizeUser } from '../utils/auth.js';
 
+async function loadAuthenticatedUserFromHeader(authHeader = '', { allowUnverified = false } = {}) {
+  if (!authHeader.startsWith('Bearer ') || !process.env.JWT_SECRET) {
+    return null;
+  }
+
+  const token = authHeader.split(' ')[1];
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const user = await User.findById(decoded.userId).select('-password');
+
+  if (!user) {
+    return null;
+  }
+
+  if (!allowUnverified && !isUserFullyVerified(user)) {
+    return null;
+  }
+
+  return user;
+}
+
 export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || '';
@@ -24,9 +44,9 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await loadAuthenticatedUserFromHeader(authHeader, {
+      allowUnverified: true,
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -48,9 +68,41 @@ export const protect = async (req, res, next) => {
     req.user = user;
     return next();
   } catch (error) {
+    if (error?.name === 'TokenExpiredError' || error?.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token.',
+      });
+    }
+
+    if (error?.message === 'JWT_SECRET is not configured.') {
+      return res.status(500).json({
+        success: false,
+        message: 'JWT_SECRET is not configured.',
+      });
+    }
+
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired token.',
     });
+  }
+};
+
+export const optionalProtect = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+
+    if (authHeader.startsWith('Bearer ') && process.env.JWT_SECRET) {
+      const user = await loadAuthenticatedUserFromHeader(authHeader);
+
+      if (user) {
+        req.user = user;
+      }
+    }
+
+    return next();
+  } catch {
+    return next();
   }
 };

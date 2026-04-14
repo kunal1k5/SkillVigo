@@ -234,6 +234,12 @@ export async function createOrOpenConversation(req, res, next) {
     let skill = null;
 
     if (skillId) {
+      if (!['seeker', 'admin'].includes(req.user.role)) {
+        return res.status(403).json({
+          error: 'Only users who hire skills can start a new provider conversation from search.',
+        });
+      }
+
       if (!mongoose.Types.ObjectId.isValid(skillId)) {
         return res.status(400).json({
           error: 'Invalid skill ID.',

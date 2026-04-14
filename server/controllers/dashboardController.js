@@ -436,6 +436,18 @@ export async function getDashboard(req, res, next) {
 
     const dashboard = {
       role: req.user.role,
+      viewer: {
+        role: req.user.role,
+        mode: isProvider ? 'provider' : 'seeker',
+        canCreateSkill: isProvider || req.user.role === 'admin',
+        canCreateBooking: !isProvider,
+      },
+      summary: {
+        totalSkills: skills.length,
+        totalBookings: bookings.length,
+        totalConversations: conversations.length,
+        totalReviews: reviews.length,
+      },
       stats: isProvider
         ? buildProviderStats({ skills, bookings, reviews })
         : buildSeekerStats({ bookings, reviews }),
