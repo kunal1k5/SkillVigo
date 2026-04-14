@@ -1,11 +1,26 @@
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import seedData from './seedData.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DB_PATH = path.join(__dirname, 'db.json');
+function resolveDataDirectory() {
+  const candidateDirectories = [
+    path.resolve(process.cwd(), 'data'),
+    path.resolve(process.cwd(), 'server', 'data'),
+  ];
+
+  for (const candidateDirectory of candidateDirectories) {
+    if (existsSync(candidateDirectory)) {
+      return candidateDirectory;
+    }
+  }
+
+  // Serverless runtimes allow writes under /tmp only.
+  return path.resolve('/tmp', 'skillvigo-data');
+}
+
+const DATA_DIR = resolveDataDirectory();
+const DB_PATH = path.join(DATA_DIR, 'db.json');
 
 let writeQueue = Promise.resolve();
 
@@ -17,7 +32,7 @@ async function ensureDatabaseFile() {
   try {
     await fs.access(DB_PATH);
   } catch {
-    await fs.mkdir(__dirname, { recursive: true });
+    await fs.mkdir(DATA_DIR, { recursive: true });
     await fs.writeFile(DB_PATH, JSON.stringify(seedData, null, 2), 'utf-8');
   }
 }
