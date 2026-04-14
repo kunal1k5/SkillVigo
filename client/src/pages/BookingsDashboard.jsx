@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calendar, RefreshCw, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BookingCard from '../components/booking/BookingCard';
@@ -18,11 +18,16 @@ import {
 
 const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
+  { id: 'needs-action', label: 'Needs action' },
   { id: 'pending', label: 'Pending' },
   { id: 'confirmed', label: 'Confirmed' },
   { id: 'completed', label: 'Completed' },
   { id: 'canceled', label: 'Canceled' },
 ];
+
+function isProviderRole(role = '') {
+  return role === 'provider' || role === 'admin';
+}
 
 function sortBookings(bookings = []) {
   const statusRank = {
@@ -47,23 +52,6 @@ function sortBookings(bookings = []) {
   });
 }
 
-function getBookingSearchHaystack(booking = {}) {
-  return [
-    booking.skill?.title,
-    booking.skillTitle,
-    booking.instructor?.name,
-    booking.instructorName,
-    booking.student?.name,
-    booking.category,
-    booking.note,
-    booking.location,
-    booking.mode,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-}
-
 function getInstructorId(booking = {}) {
   return booking.instructor?.id || booking.skill?.instructor?.id || '';
 }
@@ -72,7 +60,33 @@ function getStudentId(booking = {}) {
   return booking.student?.id || '';
 }
 
+function getCounterpartMeta(booking = {}, currentUser = null) {
+  if (isProviderRole(currentUser?.role || '')) {
+    return {
+      label: 'Learner',
+      name: booking.student?.name || 'Learner',
+    };
+  }
+
+  return {
+    label: 'Provider',
+    name:
+      booking.instructor?.name ||
+      booking.skill?.instructor?.name ||
+      booking.instructorName ||
+      'Provider',
+  };
+}
+
 function canConfirmBooking(booking, currentUser) {
+  if (!booking || !currentUser) {
+    return false;
+  }
+
+  return currentUser.role === 'admin' || currentUser.id === getInstructorId(booking);
+}
+
+function canCompleteBooking(booking, currentUser) {
   if (!booking || !currentUser) {
     return false;
   }
@@ -95,45 +109,83 @@ function canCancelBooking(booking, currentUser) {
   );
 }
 
-function buildStats(bookings = []) {
-  const pendingCount = bookings.filter((booking) => booking.status === 'pending').length;
-  const confirmedCount = bookings.filter((booking) => booking.status === 'confirmed').length;
-  const completedCount = bookings.filter((booking) => booking.status === 'completed').length;
-  const canceledCount = bookings.filter((booking) => booking.status === 'canceled').length;
-  const completionRate = bookings.length
-    ? Math.round((completedCount / bookings.length) * 100)
-    : 0;
+function requiresMyAction(booking, currentUser) {
+  if (!booking || !currentUser) {
+    return false;
+  }
+
+  const status = String(booking.status || '').toLowerCase();
+
+  if (status !== 'pending' && status !== 'confirmed') {
+    return false;
+  }
+
+  if (isProviderRole(currentUser.role || '')) {
+    if (status === 'pending') {
+      return canConfirmBooking(booking, currentUser);
+    }
+
+    return canCompleteBooking(booking, currentUser);
+  }
+
+  return currentUser.id === getStudentId(booking);
+}
+
+function getBookingSearchHaystack(booking = {}, currentUser = null) {
+  const counterpart = getCounterpartMeta(booking, currentUser);
+
+  return [
+    booking.skill?.title,
+    booking.skillTitle,
+    booking.instructor?.name,
+    booking.instructorName,
+    booking.student?.name,
+    counterpart.name,
+    booking.category,
+    booking.note,
+    booking.location,
+    booking.mode,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function formatShortSchedule(dateValue) {
+  if (!dateValue) {
+    return 'Schedule pending';
+  }
+
+  return new Intl.DateTimeFormat('en-IN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(dateValue));
+}
+
+function buildRoleMeta(currentUser) {
+  if (isProviderRole(currentUser?.role || '')) {
+    return {
+      title: 'Manage incoming booking requests and session delivery',
+      description:
+        'Approve pending requests, complete confirmed sessions, and keep every learner conversation and timing in one clean workspace.',
+      primaryCta: 'Explore marketplace',
+      emptyTitle: 'No learner requests yet',
+      emptyDescription:
+        'As soon as someone books your skill, it will appear here with actions to confirm or complete.',
+    };
+  }
 
   return {
-    completionRate,
-    items: [
-      {
-        label: 'Total bookings',
-        value: bookings.length,
-        detail: 'Every request, confirmed slot, completed session, and canceled booking in one place.',
-        accent: '#111827',
-      },
-      {
-        label: 'Awaiting action',
-        value: pendingCount,
-        detail: 'Requests that still need provider approval or a final response.',
-        accent: '#3f3f46',
-      },
-      {
-        label: 'Upcoming live',
-        value: confirmedCount,
-        detail: 'Confirmed bookings that are ready for the next session.',
-        accent: '#52525b',
-      },
-      {
-        label: 'Wrapped up',
-        value: completedCount,
-        detail: canceledCount
-          ? `${canceledCount} canceled request${canceledCount === 1 ? '' : 's'} are tracked separately.`
-          : 'Completed sessions stay here as your clean booking history.',
-        accent: '#71717a',
-      },
-    ],
+    title: 'Track your booking requests and upcoming sessions',
+    description:
+      'See booking status updates, session details, and manage pending requests from one responsive booking page.',
+    primaryCta: 'Book a new skill',
+    emptyTitle: 'No bookings yet',
+    emptyDescription:
+      'Book your first skill from search and all upcoming sessions will appear here automatically.',
   };
 }
 
@@ -153,18 +205,43 @@ function findNextBooking(bookings = []) {
   )[0];
 }
 
-function formatShortSchedule(dateValue) {
-  if (!dateValue) {
-    return 'Schedule pending';
-  }
+function buildStats(bookings = [], currentUser = null) {
+  const pendingCount = bookings.filter((booking) => booking.status === 'pending').length;
+  const confirmedCount = bookings.filter((booking) => booking.status === 'confirmed').length;
+  const completedCount = bookings.filter((booking) => booking.status === 'completed').length;
+  const needsActionCount = bookings.filter((booking) => requiresMyAction(booking, currentUser)).length;
+  const completionRate = bookings.length
+    ? Math.round((completedCount / bookings.length) * 100)
+    : 0;
 
-  return new Intl.DateTimeFormat('en-IN', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(dateValue));
+  return [
+    {
+      label: 'Total bookings',
+      value: bookings.length,
+      detail: 'All historical and active booking records in your workspace.',
+      accent: '#0f172a',
+    },
+    {
+      label: 'Needs action',
+      value: needsActionCount,
+      detail: isProviderRole(currentUser?.role || '')
+        ? 'Requests that need your confirmation or completion update.'
+        : 'Active requests that still need your attention.',
+      accent: '#1d4ed8',
+    },
+    {
+      label: 'Upcoming live',
+      value: pendingCount + confirmedCount,
+      detail: 'Pending plus confirmed sessions that are still active.',
+      accent: '#0f766e',
+    },
+    {
+      label: 'Completion rate',
+      value: `${completionRate}%`,
+      detail: 'Percentage of sessions that reached completed status.',
+      accent: '#334155',
+    },
+  ];
 }
 
 function StatusBanner({
@@ -177,18 +254,13 @@ function StatusBanner({
 }) {
   const toneStyles = {
     info: 'border-slate-200 bg-white text-slate-900',
-    success: 'border-slate-900 bg-slate-900 text-white',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
     warning: 'border-amber-200 bg-amber-50 text-amber-900',
     error: 'border-rose-200 bg-rose-50 text-rose-900',
   };
 
-  const buttonClassName =
-    tone === 'success'
-      ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
-      : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50';
-
   return (
-    <div className={`rounded-[28px] border p-4 shadow-sm ${toneStyles[tone] || toneStyles.info}`}>
+    <div className={`rounded-2xl border p-4 shadow-sm ${toneStyles[tone] || toneStyles.info}`}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm font-semibold">{title}</p>
@@ -200,7 +272,7 @@ function StatusBanner({
             type="button"
             onClick={onAction}
             disabled={busy}
-            className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${buttonClassName}`}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <RefreshCw className="h-4 w-4" />
             {busy ? 'Refreshing...' : actionLabel}
@@ -213,15 +285,15 @@ function StatusBanner({
 
 function AuthPrompt() {
   return (
-    <div className="min-h-screen flex flex-col bg-stone-100">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
       <PageContainer className="flex flex-1 items-center justify-center py-10">
-        <div className="max-w-xl rounded-[32px] border border-stone-200 bg-white p-8 text-center shadow-sm">
+        <div className="max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
           <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-slate-900">
-            <Calendar className="h-8 w-8 text-slate-900" /> Sign in to manage your bookings
+            <Calendar className="h-8 w-8 text-slate-900" /> Sign in to open booking workspace
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Upcoming sessions, confirmations, cancellations, and booking history are available after you sign in.
+            Session confirmations, cancellations, and booking history are available after you sign in.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
@@ -232,7 +304,7 @@ function AuthPrompt() {
             </Link>
             <Link
               to="/register"
-              className="rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-stone-50"
+              className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Create account
             </Link>
@@ -243,24 +315,20 @@ function AuthPrompt() {
   );
 }
 
-function EmptyBookingsState() {
+function EmptyBookingsState({ roleMeta }) {
   return (
-    <section className="grid min-h-[240px] content-center gap-4 rounded-[28px] border border-stone-200 bg-white p-7 shadow-sm">
-      <span className="w-fit rounded-full border border-stone-300 bg-stone-100 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-stone-700">
-        No bookings yet
+    <section className="grid min-h-[240px] content-center gap-4 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+      <span className="w-fit rounded-full border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700">
+        Booking list is empty
       </span>
-      <h2 className="text-[clamp(1.4rem,3vw,2rem)] font-semibold text-slate-900">
-        Your booking page is ready for the first session.
-      </h2>
-      <p className="max-w-[58ch] text-sm leading-7 text-slate-600">
-        Explore the marketplace, send a booking request to a provider, and the full booking trail will start appearing here.
-      </p>
+      <h2 className="text-[clamp(1.4rem,3vw,2rem)] font-semibold text-slate-900">{roleMeta.emptyTitle}</h2>
+      <p className="max-w-[58ch] text-sm leading-7 text-slate-600">{roleMeta.emptyDescription}</p>
       <div>
         <Link
           to="/search"
           className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black"
         >
-          Browse skills to book
+          Browse skills
         </Link>
       </div>
     </section>
@@ -277,6 +345,8 @@ export default function BookingsDashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [actionBusyId, setActionBusyId] = useState('');
   const [feedback, setFeedback] = useState({ tone: 'success', title: '', description: '' });
+
+  const roleMeta = useMemo(() => buildRoleMeta(currentUser), [currentUser]);
 
   useEffect(() => {
     if (!feedback.title) {
@@ -321,7 +391,7 @@ export default function BookingsDashboard() {
         setFeedback({
           tone: 'success',
           title: 'Bookings refreshed',
-          description: 'Your latest booking status and session details are now synced.',
+          description: 'Latest booking statuses and session details are now synced.',
         });
       }
     } catch (error) {
@@ -344,12 +414,20 @@ export default function BookingsDashboard() {
     const query = searchQuery.trim().toLowerCase();
 
     return bookings.filter((booking) => {
+      const status = String(booking.status || '').toLowerCase();
       const matchesStatus =
-        statusFilter === 'all' || String(booking.status || '').toLowerCase() === statusFilter;
-      const matchesSearch = query ? getBookingSearchHaystack(booking).includes(query) : true;
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'needs-action'
+            ? requiresMyAction(booking, currentUser)
+            : status === statusFilter;
+      const matchesSearch = query
+        ? getBookingSearchHaystack(booking, currentUser).includes(query)
+        : true;
+
       return matchesStatus && matchesSearch;
     });
-  }, [bookings, searchQuery, statusFilter]);
+  }, [bookings, currentUser, searchQuery, statusFilter]);
 
   useEffect(() => {
     if (!filteredBookings.length) {
@@ -369,8 +447,13 @@ export default function BookingsDashboard() {
       null,
     [filteredBookings, selectedBookingId],
   );
-  const stats = useMemo(() => buildStats(bookings), [bookings]);
+
+  const stats = useMemo(() => buildStats(bookings, currentUser), [bookings, currentUser]);
   const nextBooking = useMemo(() => findNextBooking(bookings), [bookings]);
+  const needsActionCount = useMemo(
+    () => bookings.filter((booking) => requiresMyAction(booking, currentUser)).length,
+    [bookings, currentUser],
+  );
   const activeBookingsCount = useMemo(
     () =>
       bookings.filter((booking) =>
@@ -407,12 +490,46 @@ export default function BookingsDashboard() {
       setFeedback({
         tone: 'success',
         title: 'Booking confirmed',
-        description: `${updatedBooking.skillTitle || 'This session'} is now confirmed and ready to go live.`,
+        description: `${updatedBooking.skillTitle || 'This session'} is now confirmed.`,
       });
     } catch (error) {
       setFeedback({
         tone: 'error',
         title: 'Could not confirm booking',
+        description: error.message || 'Please try again in a moment.',
+      });
+    } finally {
+      setActionBusyId('');
+    }
+  };
+
+  const handleCompleteBooking = async (booking) => {
+    if (!booking || actionBusyId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Mark ${booking.skillTitle || booking.skill?.title || 'this booking'} as completed?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionBusyId(booking.id);
+
+    try {
+      const updatedBooking = await updateBookingStatus(booking.id, 'completed');
+      applyBookingUpdate(updatedBooking);
+      setFeedback({
+        tone: 'success',
+        title: 'Booking completed',
+        description: `${updatedBooking.skillTitle || 'This session'} has been moved to completed.`,
+      });
+    } catch (error) {
+      setFeedback({
+        tone: 'error',
+        title: 'Could not complete booking',
         description: error.message || 'Please try again in a moment.',
       });
     } finally {
@@ -441,7 +558,7 @@ export default function BookingsDashboard() {
       setFeedback({
         tone: 'success',
         title: 'Booking canceled',
-        description: `${updatedBooking.skillTitle || 'This session'} has been marked as canceled.`,
+        description: `${updatedBooking.skillTitle || 'This session'} is now canceled.`,
       });
     } catch (error) {
       setFeedback({
@@ -463,25 +580,25 @@ export default function BookingsDashboard() {
     return <AuthPrompt />;
   }
 
+  const counterpart = getCounterpartMeta(nextBooking, currentUser);
+
   return (
-    <div className="min-h-screen flex flex-col bg-stone-100">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
 
       <main className="flex-1 py-8">
         <PageContainer maxWidth={1320} className="space-y-6">
-          <section className="grid gap-6 rounded-[32px] border border-stone-200 bg-white p-6 shadow-sm lg:grid-cols-[minmax(0,1.2fr)_320px]">
+          <section className="grid gap-6 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm lg:grid-cols-[minmax(0,1.2fr)_340px]">
             <div className="grid gap-5">
               <div className="grid gap-3">
-                <span className="w-fit rounded-full border border-stone-300 bg-stone-100 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-stone-700">
+                <span className="w-fit rounded-full border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
                   Booking workspace
                 </span>
                 <div className="grid gap-2">
-                  <h1 className="text-[clamp(2rem,4vw,3rem)] font-semibold leading-tight text-slate-900">
-                    My bookings
+                  <h1 className="text-[clamp(2rem,4vw,2.8rem)] font-semibold leading-tight text-slate-900">
+                    {roleMeta.title}
                   </h1>
-                  <p className="max-w-[62ch] text-sm leading-7 text-slate-600">
-                    Track booking requests, review session details, and manage upcoming classes without leaving the same page.
-                  </p>
+                  <p className="max-w-[62ch] text-sm leading-7 text-slate-600">{roleMeta.description}</p>
                 </div>
               </div>
 
@@ -490,37 +607,33 @@ export default function BookingsDashboard() {
                   to="/search"
                   className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black"
                 >
-                  Book a new skill
+                  {roleMeta.primaryCta}
                 </Link>
-                <a
-                  href="#booking-list"
-                  className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-stone-50"
+                <button
+                  type="button"
+                  onClick={() => loadBookings({ silent: true })}
+                  disabled={refreshing || loading}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Jump to my sessions
-                </a>
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? 'Refreshing...' : 'Refresh bookings'}
+                </button>
               </div>
             </div>
 
-            <aside className="grid gap-3 rounded-[28px] border border-stone-200 bg-stone-50 p-5">
+            <aside className="grid gap-3 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
               <div className="grid gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">
-                  Next session
-                </span>
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Next session</span>
                 <strong className="text-lg leading-7 text-slate-900">
-                  {nextBooking?.skill?.title || nextBooking?.skillTitle || nextBooking?.title || 'No session yet'}
+                  {nextBooking?.skill?.title || nextBooking?.skillTitle || 'No session yet'}
                 </strong>
                 <span className="text-sm leading-6 text-slate-600">
-                  {nextBooking?.skill?.instructor?.name ||
-                    nextBooking?.instructor?.name ||
-                    nextBooking?.instructorName ||
-                    'Provider will appear here'}
+                  {counterpart.label}: {counterpart.name || 'TBD'}
                 </span>
               </div>
 
-              <div className="rounded-[22px] border border-stone-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                  Scheduled
-                </p>
+              <div className="rounded-[18px] border border-slate-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Scheduled</p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
                   {formatShortSchedule(nextBooking?.scheduledAt)}
                 </p>
@@ -530,23 +643,19 @@ export default function BookingsDashboard() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-[22px] border border-stone-200 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                    Active
-                  </p>
+                <div className="rounded-[18px] border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Active</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-900">{activeBookingsCount}</p>
                 </div>
-                <div className="rounded-[22px] border border-stone-200 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">
-                    Completion
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">{stats.completionRate}%</p>
+                <div className="rounded-[18px] border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Needs action</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">{needsActionCount}</p>
                 </div>
               </div>
             </aside>
           </section>
 
-          <BookingStats stats={stats.items} />
+          <BookingStats stats={stats} />
 
           {feedback.title ? (
             <StatusBanner
@@ -559,41 +668,14 @@ export default function BookingsDashboard() {
             />
           ) : null}
 
-          <section className="grid gap-5 rounded-[32px] border border-stone-200 bg-white p-6 shadow-sm">
+          <section className="grid gap-5 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
-                  Session list
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Session list</p>
                 <h2 className="mt-2 text-2xl font-semibold text-slate-900" id="booking-list">
                   Track every session in one place
                 </h2>
               </div>
-
-              <button
-                type="button"
-                onClick={() => loadBookings({ silent: true })}
-                disabled={refreshing || loading}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Refreshing...' : 'Refresh bookings'}
-              </button>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <label className="relative block">
-                <span className="pointer-events-none absolute left-4 top-3.5 text-stone-400">
-                  <Search className="h-4 w-4" />
-                </span>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search by skill, coach, note, or location"
-                  className="w-full rounded-2xl border border-stone-300 bg-white py-3 pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-900"
-                />
-              </label>
 
               <div className="flex flex-wrap gap-2">
                 {STATUS_FILTERS.map((filter) => (
@@ -604,7 +686,7 @@ export default function BookingsDashboard() {
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       statusFilter === filter.id
                         ? 'bg-slate-900 text-white'
-                        : 'border border-stone-300 bg-white text-slate-600 hover:bg-stone-50'
+                        : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     {filter.label}
@@ -613,12 +695,25 @@ export default function BookingsDashboard() {
               </div>
             </div>
 
+            <label className="relative block">
+              <span className="pointer-events-none absolute left-4 top-3.5 text-slate-400">
+                <Search className="h-4 w-4" />
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by skill, person, note, or location"
+                className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-900"
+              />
+            </label>
+
             {loading ? (
               <div className="flex min-h-[320px] items-center justify-center">
                 <Loader size="lg" message="Loading your bookings..." />
               </div>
             ) : bookings.length === 0 ? (
-              <EmptyBookingsState />
+              <EmptyBookingsState roleMeta={roleMeta} />
             ) : filteredBookings.length === 0 ? (
               <BookingEmptyState onReset={resetFilters} />
             ) : (
@@ -628,15 +723,28 @@ export default function BookingsDashboard() {
                     <BookingCard
                       key={booking.id}
                       booking={booking}
+                      currentUser={currentUser}
+                      actionBusyId={actionBusyId}
                       isActive={booking.id === selectedBooking?.id}
                       onSelect={(selected) => setSelectedBookingId(selected.id)}
                       onConfirm={
-                        canConfirmBooking(booking, currentUser) && actionBusyId !== booking.id
+                        canConfirmBooking(booking, currentUser) &&
+                        booking.status === 'pending' &&
+                        actionBusyId !== booking.id
                           ? handleConfirmBooking
                           : undefined
                       }
+                      onComplete={
+                        canCompleteBooking(booking, currentUser) &&
+                        booking.status === 'confirmed' &&
+                        actionBusyId !== booking.id
+                          ? handleCompleteBooking
+                          : undefined
+                      }
                       onCancel={
-                        canCancelBooking(booking, currentUser) && actionBusyId !== booking.id
+                        canCancelBooking(booking, currentUser) &&
+                        ['pending', 'confirmed'].includes(String(booking.status || '').toLowerCase()) &&
+                        actionBusyId !== booking.id
                           ? handleCancelBooking
                           : undefined
                       }
@@ -647,14 +755,25 @@ export default function BookingsDashboard() {
                 <aside className="xl:self-start">
                   <BookingDetailsPanel
                     booking={selectedBooking}
+                    currentUser={currentUser}
+                    actionBusyId={actionBusyId}
                     onConfirm={
                       canConfirmBooking(selectedBooking, currentUser) &&
+                      selectedBooking?.status === 'pending' &&
                       actionBusyId !== selectedBooking?.id
                         ? handleConfirmBooking
                         : undefined
                     }
+                    onComplete={
+                      canCompleteBooking(selectedBooking, currentUser) &&
+                      selectedBooking?.status === 'confirmed' &&
+                      actionBusyId !== selectedBooking?.id
+                        ? handleCompleteBooking
+                        : undefined
+                    }
                     onCancel={
                       canCancelBooking(selectedBooking, currentUser) &&
+                      ['pending', 'confirmed'].includes(String(selectedBooking?.status || '').toLowerCase()) &&
                       actionBusyId !== selectedBooking?.id
                         ? handleCancelBooking
                         : undefined

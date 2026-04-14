@@ -33,7 +33,6 @@ export default function AppRoutes() {
       {/* Moved temp routes out for viewing */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/chat" element={<ChatPage />} />
-      <Route path="/bookings" element={<BookingsDashboard />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile/:id" element={<Profile />} />
       <Route path="/profile/edit" element={<Profile />} />
@@ -47,6 +46,7 @@ export default function AppRoutes() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
+        <Route path="/bookings" element={<BookingsDashboard />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['provider', 'admin']} />}>

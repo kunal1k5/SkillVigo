@@ -1,39 +1,31 @@
 const STATUS_STYLES = {
   pending: {
     label: 'Pending approval',
-    color: '#111827',
-    background: '#f5f5f5',
-    border: '#d4d4d8',
-    dot: '#3f3f46',
+    pill: 'border-slate-300 bg-slate-100 text-slate-800',
+    dot: 'bg-slate-500',
   },
   confirmed: {
     label: 'Confirmed',
-    color: '#ffffff',
-    background: '#111827',
-    border: '#111827',
-    dot: '#111827',
+    pill: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+    dot: 'bg-emerald-600',
   },
   completed: {
     label: 'Completed',
-    color: '#111827',
-    background: '#e5e7eb',
-    border: '#d4d4d8',
-    dot: '#52525b',
+    pill: 'border-blue-300 bg-blue-50 text-blue-700',
+    dot: 'bg-blue-600',
   },
   canceled: {
     label: 'Canceled',
-    color: '#b91c1c',
-    background: '#fef2f2',
-    border: '#fecaca',
-    dot: '#a8a29e',
+    pill: 'border-rose-300 bg-rose-50 text-rose-700',
+    dot: 'bg-rose-500',
   },
 };
 
 const TIMELINE_STEPS = [
-  { key: 'requested', title: 'Request captured', description: 'Your learning request is saved in SkillVigo.' },
-  { key: 'confirmed', title: 'Slot aligned', description: 'Coach availability and timing are ready.' },
-  { key: 'session', title: 'Session delivery', description: 'The actual live experience happens here.' },
-  { key: 'followup', title: 'Follow-up notes', description: 'Resources, actions and feedback stay organized.' },
+  { key: 'requested', title: 'Request created', description: 'Booking request was captured and saved.' },
+  { key: 'confirmed', title: 'Slot confirmed', description: 'Provider approved the timing and format.' },
+  { key: 'session', title: 'Session delivery', description: 'Live class or mentoring session runs here.' },
+  { key: 'followup', title: 'Wrap-up', description: 'Session notes and follow-up actions are finalized.' },
 ];
 
 function formatLongDate(dateValue) {
@@ -68,264 +60,161 @@ function getCompletedSteps(status) {
   }[status] || 1;
 }
 
-export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
+function isProviderRole(role = '') {
+  return role === 'provider' || role === 'admin';
+}
+
+function getCounterpartMeta(booking = {}, currentUser = null) {
+  if (isProviderRole(currentUser?.role || '')) {
+    return {
+      label: 'Learner',
+      name: booking.student?.name || 'Learner',
+    };
+  }
+
+  return {
+    label: 'Provider',
+    name:
+      booking.instructor?.name ||
+      booking.skill?.instructor?.name ||
+      booking.instructorName ||
+      'Provider',
+  };
+}
+
+export default function BookingDetailsPanel({
+  booking,
+  onConfirm,
+  onCancel,
+  onComplete,
+  actionBusyId = '',
+  currentUser = null,
+}) {
   if (!booking) {
     return (
-      <aside
-        className="booking-detail-panel"
-        style={{
-          borderRadius: '28px',
-          padding: '24px',
-          background: '#ffffff',
-          border: '1px solid #e7e5e4',
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
-          display: 'grid',
-          gap: '14px',
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#0f172a' }}>Booking detail panel</h2>
-        <p style={{ margin: 0, color: '#475569', lineHeight: 1.7 }}>
-          Pick a booking from the list to inspect its agenda, timing and next actions.
+      <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-slate-900">Booking details</h2>
+        <p className="mt-2 text-sm leading-7 text-slate-600">
+          Select a booking card to review the full session timeline, key details, and actions.
         </p>
       </aside>
     );
   }
 
-  const status = (booking.status || 'pending').toLowerCase();
+  const status = String(booking.status || 'pending').toLowerCase();
   const statusStyle = STATUS_STYLES[status] || STATUS_STYLES.pending;
   const completedSteps = getCompletedSteps(status);
   const title = booking.skill?.title || booking.skillTitle || booking.title || 'Skill session';
-  const instructor =
-    booking.skill?.instructor?.name ||
-    booking.instructor?.name ||
-    booking.instructorName ||
-    'Instructor assigned soon';
+  const counterpart = getCounterpartMeta(booking, currentUser);
+  const isBusy = String(actionBusyId) === String(booking.id);
 
   const keyDetails = [
-    { label: 'Session date', value: formatLongDate(booking.scheduledAt || booking.date || booking.createdAt) },
-    { label: 'Mode', value: booking.mode || 'Private live session' },
+    { label: 'Scheduled', value: formatLongDate(booking.scheduledAt || booking.createdAt) },
+    { label: 'Mode', value: booking.mode || 'Session' },
     { label: 'Location', value: booking.location || 'Online room' },
     { label: 'Duration', value: booking.duration || '60 min' },
   ];
 
   return (
-    <aside
-      className="booking-detail-panel"
-      style={{
-        position: 'sticky',
-        top: '24px',
-        display: 'grid',
-        gap: '18px',
-      }}
-    >
-      <section
-        style={{
-          borderRadius: '28px',
-          padding: '24px',
-          background: '#ffffff',
-          border: '1px solid #e7e5e4',
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
-          display: 'grid',
-          gap: '18px',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                width: 'fit-content',
-                padding: '7px 12px',
-                borderRadius: '999px',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: statusStyle.color,
-                background: statusStyle.background,
-                border: `1px solid ${statusStyle.border}`,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-              }}
-            >
-              {statusStyle.label}
-            </span>
-            <strong style={{ color: '#0f172a', fontSize: '1rem' }}>
-              {formatCurrency(booking.price, booking.currency)}
-            </strong>
-          </div>
-
-          <div style={{ display: 'grid', gap: '8px' }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 'clamp(1.35rem, 3vw, 1.9rem)',
-                color: '#0f172a',
-                lineHeight: 1.15,
-              }}
-            >
-              {title}
-            </h2>
-            <p style={{ margin: 0, color: '#475569', lineHeight: 1.7 }}>
-              {booking.note || 'Everything your session needs is kept here for quick review before you go live.'}
-            </p>
-          </div>
+    <aside className="sticky top-24 grid gap-4">
+      <section className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusStyle.pill}`}>
+            {statusStyle.label}
+          </span>
+          <strong className="text-lg font-semibold text-slate-900">
+            {formatCurrency(booking.price, booking.currency)}
+          </strong>
         </div>
 
-        <div
-          style={{
-            borderRadius: '22px',
-            padding: '18px',
-            background: '#fafaf9',
-            color: '#0f172a',
-            border: '1px solid #e7e5e4',
-            display: 'grid',
-            gap: '8px',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '12px',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: '#78716c',
-              fontWeight: 700,
-            }}
-          >
-            Mentor overview
-          </span>
-          <strong style={{ fontSize: '1.15rem' }}>{instructor}</strong>
-          <span style={{ color: '#57534e', lineHeight: 1.6 }}>
-            {booking.category || 'Coaching track'} | {booking.mode || 'Live learning format'}
-          </span>
+        <div className="grid gap-2">
+          <h2 className="text-2xl font-semibold leading-tight text-slate-900">{title}</h2>
+          <p className="text-sm leading-7 text-slate-600">
+            {booking.note || 'Detailed session notes will be visible here before and after the booking.'}
+          </p>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: '12px',
-          }}
-        >
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            {counterpart.label}
+          </p>
+          <p className="mt-1 text-base font-semibold text-slate-900">{counterpart.name}</p>
+          <p className="mt-1 text-sm text-slate-600">{booking.category || 'Session'} | {booking.mode || 'Live format'}</p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
           {keyDetails.map((item) => (
-            <div
-              key={item.label}
-              style={{
-                borderRadius: '18px',
-                border: '1px solid #e7e5e4',
-                padding: '15px',
-                background: '#ffffff',
-                display: 'grid',
-                gap: '6px',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '12px',
-                  color: '#64748b',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  fontWeight: 700,
-                }}
-              >
-                {item.label}
-              </span>
-              <strong style={{ color: '#0f172a', lineHeight: 1.5 }}>{item.value}</strong>
+            <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{item.label}</p>
+              <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">{item.value}</p>
             </div>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {status === 'pending' && onConfirm ? (
+        <div className="flex flex-wrap gap-2">
+          {onConfirm ? (
             <button
-              onClick={() => onConfirm(booking)}
               type="button"
-              style={{
-                background: '#111827',
-                color: '#ffffff',
-                border: '1px solid #111827',
-                borderRadius: '999px',
-                minWidth: '148px',
-                padding: '10px 16px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              onClick={() => onConfirm(booking)}
+              disabled={isBusy}
+              className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Confirm booking
+              {isBusy ? 'Updating...' : 'Confirm booking'}
             </button>
           ) : null}
 
-          {(status === 'pending' || status === 'confirmed') && onCancel ? (
+          {onComplete ? (
             <button
-              onClick={() => onCancel(booking)}
               type="button"
-              style={{
-                minWidth: '128px',
-                background: '#ffffff',
-                color: '#0f172a',
-                border: '1px solid #d6d3d1',
-                borderRadius: '999px',
-                padding: '10px 16px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              onClick={() => onComplete(booking)}
+              disabled={isBusy}
+              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Cancel slot
+              {isBusy ? 'Updating...' : 'Mark completed'}
+            </button>
+          ) : null}
+
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={() => onCancel(booking)}
+              disabled={isBusy}
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isBusy ? 'Updating...' : 'Cancel booking'}
             </button>
           ) : null}
         </div>
       </section>
 
-      <section
-        style={{
-          borderRadius: '28px',
-          padding: '24px',
-          background: '#ffffff',
-          border: '1px solid #e7e5e4',
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
-          display: 'grid',
-          gap: '18px',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '6px' }}>
-          <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.2rem' }}>Session journey</h3>
-          <p style={{ margin: 0, color: '#475569', lineHeight: 1.6 }}>
-            A clean snapshot of where this booking sits right now.
+      <section className="grid gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">Session journey</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            Simple progress trail for this booking lifecycle.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gap: '14px' }}>
+        <div className="grid gap-3">
           {TIMELINE_STEPS.map((step, index) => {
             const isComplete = index < completedSteps;
             const isCurrent = index + 1 === completedSteps && status !== 'completed';
 
             return (
-              <div key={step.key} style={{ display: 'grid', gridTemplateColumns: '20px minmax(0, 1fr)', gap: '14px' }}>
-                <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+              <div key={step.key} className="grid grid-cols-[18px_minmax(0,1fr)] gap-3">
+                <div className="relative flex justify-center">
                   <span
-                    style={{
-                      width: '14px',
-                      height: '14px',
-                      marginTop: '3px',
-                      borderRadius: '999px',
-                      background: isComplete ? statusStyle.dot : '#d6d3d1',
-                      boxShadow: isCurrent ? '0 0 0 5px rgba(24, 24, 27, 0.08)' : 'none',
-                    }}
+                    className={`mt-1 h-3.5 w-3.5 rounded-full ${
+                      isComplete ? statusStyle.dot : 'bg-slate-300'
+                    } ${isCurrent ? 'ring-4 ring-slate-200' : ''}`}
                   />
                   {index < TIMELINE_STEPS.length - 1 ? (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '20px',
-                        width: '2px',
-                        bottom: '-18px',
-                        background: isComplete ? 'rgba(24, 24, 27, 0.28)' : '#e7e5e4',
-                      }}
-                    />
+                    <span className={`absolute top-5 h-full w-[2px] ${isComplete ? 'bg-slate-300' : 'bg-slate-200'}`} />
                   ) : null}
                 </div>
-                <div style={{ display: 'grid', gap: '4px', paddingBottom: '10px' }}>
-                  <strong style={{ color: '#0f172a' }}>{step.title}</strong>
-                  <span style={{ color: '#475569', lineHeight: 1.6 }}>{step.description}</span>
+                <div className="pb-2">
+                  <p className="font-semibold text-slate-900">{step.title}</p>
+                  <p className="text-sm leading-6 text-slate-600">{step.description}</p>
                 </div>
               </div>
             );
@@ -333,56 +222,21 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
         </div>
       </section>
 
-      <section
-        style={{
-          borderRadius: '28px',
-          padding: '24px',
-          background: '#ffffff',
-          color: '#0f172a',
-          border: '1px solid #e7e5e4',
-          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
-          display: 'grid',
-          gap: '14px',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '6px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Session brief</h3>
-          <p style={{ margin: 0, color: '#57534e', lineHeight: 1.6 }}>
-            Quick agenda points to keep you prepared before the call starts.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {(booking.agenda || []).length ? (
-            (booking.agenda || []).map((item) => (
-              <div
-                key={item}
-                style={{
-                  borderRadius: '18px',
-                  padding: '14px 16px',
-                  background: '#fafaf9',
-                  border: '1px solid #e7e5e4',
-                  lineHeight: 1.6,
-                }}
-              >
+      <section className="grid gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">Session brief</h3>
+        {(booking.agenda || []).length ? (
+          <div className="grid gap-2">
+            {(booking.agenda || []).map((item) => (
+              <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-sm leading-6 text-slate-700">
                 {item}
               </div>
-            ))
-          ) : (
-            <div
-              style={{
-                borderRadius: '18px',
-                padding: '14px 16px',
-                background: '#fafaf9',
-                border: '1px solid #e7e5e4',
-                color: '#57534e',
-                lineHeight: 1.6,
-              }}
-            >
-              No agenda notes have been added for this booking yet.
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-sm leading-6 text-slate-600">
+            No agenda notes have been added for this booking yet.
+          </div>
+        )}
       </section>
     </aside>
   );
