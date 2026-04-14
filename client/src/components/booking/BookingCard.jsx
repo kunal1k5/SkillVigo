@@ -1,29 +1,31 @@
-import Button from '../common/Button';
-
 const STATUS_STYLES = {
   pending: {
     label: 'Pending',
-    color: '#b45309',
-    background: 'rgba(245, 158, 11, 0.16)',
-    border: 'rgba(245, 158, 11, 0.3)',
+    color: '#111827',
+    background: '#f5f5f5',
+    border: '#d4d4d8',
+    progress: '#3f3f46',
   },
   confirmed: {
     label: 'Confirmed',
-    color: '#047857',
-    background: 'rgba(16, 185, 129, 0.14)',
-    border: 'rgba(16, 185, 129, 0.28)',
+    color: '#ffffff',
+    background: '#111827',
+    border: '#111827',
+    progress: '#111827',
   },
   completed: {
     label: 'Completed',
-    color: '#1d4ed8',
-    background: 'rgba(59, 130, 246, 0.13)',
-    border: 'rgba(59, 130, 246, 0.24)',
+    color: '#111827',
+    background: '#e5e7eb',
+    border: '#d4d4d8',
+    progress: '#52525b',
   },
   canceled: {
     label: 'Canceled',
-    color: '#b91c1c',
-    background: 'rgba(239, 68, 68, 0.12)',
-    border: 'rgba(239, 68, 68, 0.24)',
+    color: '#7f1d1d',
+    background: '#fef2f2',
+    border: '#fecaca',
+    progress: '#a8a29e',
   },
 };
 
@@ -82,7 +84,7 @@ export default function BookingCard({
   const status = (booking.status || 'pending').toLowerCase();
   const statusStyle = STATUS_STYLES[status] || STATUS_STYLES.pending;
   const bookingDate = booking.date || booking.scheduledAt || booking.createdAt;
-  const title = booking.skill?.title || booking.skillTitle || booking.title || 'Premium skill session';
+  const title = booking.skill?.title || booking.skillTitle || booking.title || 'Skill session';
   const instructor =
     booking.skill?.instructor?.name ||
     booking.instructor?.name ||
@@ -93,17 +95,14 @@ export default function BookingCard({
     {
       label: 'Session date',
       value: formatSchedule(bookingDate),
-      accent: '#0f172a',
     },
     {
       label: 'Time and length',
       value: `${formatTime(bookingDate)} | ${booking.duration || '60 min'}`,
-      accent: '#0f766e',
     },
     {
       label: 'Coach and format',
       value: `${instructor} | ${booking.mode || 'Live mentoring'}`,
-      accent: '#7c3aed',
     },
   ];
 
@@ -129,12 +128,11 @@ export default function BookingCard({
         position: 'relative',
         overflow: 'hidden',
         borderRadius: '24px',
-        border: isActive ? '1px solid rgba(37, 99, 235, 0.35)' : '1px solid rgba(148, 163, 184, 0.24)',
-        background:
-          'linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.96) 100%)',
+        border: isActive ? '1px solid #111827' : '1px solid #e7e5e4',
+        background: '#ffffff',
         boxShadow: isActive
-          ? '0 22px 44px rgba(15, 23, 42, 0.14)'
-          : '0 16px 32px rgba(15, 23, 42, 0.08)',
+          ? '0 16px 30px rgba(15, 23, 42, 0.1)'
+          : '0 8px 22px rgba(15, 23, 42, 0.05)',
         padding: '24px',
         display: 'grid',
         gap: '18px',
@@ -147,8 +145,8 @@ export default function BookingCard({
         style={{
           position: 'absolute',
           inset: '0 0 auto 0',
-          height: '5px',
-          background: booking.accent || 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)',
+          height: '4px',
+          background: statusStyle.progress,
         }}
       />
 
@@ -200,7 +198,6 @@ export default function BookingCard({
                 fontSize: 'clamp(1.1rem, 2vw, 1.45rem)',
                 lineHeight: 1.2,
                 color: '#0f172a',
-                fontFamily: '"Sora", "Segoe UI", sans-serif',
               }}
             >
               {title}
@@ -217,8 +214,9 @@ export default function BookingCard({
             minWidth: '154px',
             borderRadius: '20px',
             padding: '16px',
-            background: 'rgba(15, 23, 42, 0.94)',
-            color: '#f8fafc',
+            background: '#fafaf9',
+            color: '#0f172a',
+            border: '1px solid #e7e5e4',
             display: 'grid',
             gap: '6px',
           }}
@@ -226,7 +224,7 @@ export default function BookingCard({
           <span
             style={{
               fontSize: '12px',
-              color: 'rgba(248, 250, 252, 0.72)',
+              color: '#78716c',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}
@@ -236,7 +234,7 @@ export default function BookingCard({
           <strong style={{ fontSize: '1.3rem', lineHeight: 1.1 }}>
             {formatCurrency(booking.price ?? booking.skill?.price, booking.currency)}
           </strong>
-          <span style={{ fontSize: '13px', color: 'rgba(248, 250, 252, 0.72)' }}>
+          <span style={{ fontSize: '13px', color: '#57534e' }}>
             {booking.location || 'Online room'}
           </span>
         </div>
@@ -254,8 +252,8 @@ export default function BookingCard({
             key={item.label}
             style={{
               borderRadius: '18px',
-              border: '1px solid rgba(148, 163, 184, 0.16)',
-              background: 'rgba(255, 255, 255, 0.75)',
+              border: '1px solid #e7e5e4',
+              background: '#fafaf9',
               padding: '14px 15px',
               display: 'grid',
               gap: '6px',
@@ -272,7 +270,7 @@ export default function BookingCard({
             >
               {item.label}
             </span>
-            <span style={{ color: item.accent, fontWeight: 700, lineHeight: 1.45 }}>{item.value}</span>
+            <span style={{ color: '#111827', fontWeight: 700, lineHeight: 1.45 }}>{item.value}</span>
           </div>
         ))}
       </div>
@@ -296,7 +294,7 @@ export default function BookingCard({
               width: getProgressWidth(status),
               height: '100%',
               borderRadius: '999px',
-              background: booking.accent || 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)',
+              background: statusStyle.progress,
             }}
           />
         </div>
@@ -304,54 +302,71 @@ export default function BookingCard({
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         {status === 'pending' && onConfirm ? (
-          <Button
+          <button
             onClick={(event) => {
               event.stopPropagation();
               onConfirm(booking);
             }}
-            size="sm"
+            type="button"
             style={{
-              background: booking.accent || 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)',
-              border: 'none',
+              background: '#111827',
+              color: '#ffffff',
+              border: '1px solid #111827',
+              borderRadius: '999px',
               minWidth: '140px',
-              boxShadow: '0 12px 24px rgba(37, 99, 235, 0.18)',
+              padding: '10px 16px',
+              fontSize: '14px',
+              fontWeight: 700,
+              cursor: 'pointer',
             }}
           >
             Confirm slot
-          </Button>
+          </button>
         ) : null}
 
         {(status === 'pending' || status === 'confirmed') && onCancel ? (
-          <Button
+          <button
             onClick={(event) => {
               event.stopPropagation();
               onCancel(booking);
             }}
-            variant="outline"
-            size="sm"
+            type="button"
             style={{
+              color: '#0f172a',
+              border: '1px solid #d6d3d1',
+              borderRadius: '999px',
               minWidth: '120px',
               background: '#ffffff',
+              padding: '10px 16px',
+              fontSize: '14px',
+              fontWeight: 700,
+              cursor: 'pointer',
             }}
           >
             Cancel
-          </Button>
+          </button>
         ) : null}
 
-        <Button
+        <button
           onClick={(event) => {
             event.stopPropagation();
             handleSelect();
           }}
-          variant="secondary"
-          size="sm"
+          type="button"
           style={{
+            color: '#0f172a',
+            border: '1px solid #e7e5e4',
+            borderRadius: '999px',
             minWidth: '130px',
-            background: 'rgba(15, 23, 42, 0.08)',
+            background: '#f5f5f4',
+            padding: '10px 16px',
+            fontSize: '14px',
+            fontWeight: 700,
+            cursor: 'pointer',
           }}
         >
           View details
-        </Button>
+        </button>
       </div>
     </article>
   );

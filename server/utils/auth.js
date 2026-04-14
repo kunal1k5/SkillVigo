@@ -1,4 +1,10 @@
 import jwt from 'jsonwebtoken';
+import {
+  getVerificationSummary,
+  isEmailVerified,
+  isPhoneVerified,
+  isUserFullyVerified,
+} from './verification.js';
 
 export function generateToken(userId) {
   const { JWT_SECRET } = process.env;
@@ -23,6 +29,10 @@ export function sanitizeUser(user) {
     email: user.email,
     role: user.role,
     phone: user.phone || '',
+    emailVerified: isEmailVerified(user),
+    phoneVerified: isPhoneVerified(user),
+    isVerified: isUserFullyVerified(user),
+    verification: getVerificationSummary(user),
     location: user.location || '',
     country: user.country || '',
     state: user.state || '',

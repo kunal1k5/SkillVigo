@@ -256,7 +256,7 @@ function SidePanel() {
         <div className="rounded-[28px] border border-emerald-100 bg-slate-900 px-5 py-5 text-slate-50 shadow-lg shadow-slate-900/10">
           <p className="text-sm font-semibold text-white">What happens next</p>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            After signup, we will take you directly to the right experience for your role so you can get started immediately.
+            After signup, we will send OTP codes to your email and phone so you can verify both before the first login.
           </p>
         </div>
       </div>
@@ -266,7 +266,7 @@ function SidePanel() {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register, authBusy } = useAuth();
+  const { register, authBusy, pendingVerification } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -393,20 +393,43 @@ export default function RegisterPage() {
       return;
     }
 
+    const normalizedPhone = formData.phone.replace(/\D/g, '');
+
+    if (!normalizedPhone) {
+      setError('Phone number is required so we can send your verification OTP.');
+      return;
+    }
+
+    if (normalizedPhone.length < 10 || normalizedPhone.length > 15) {
+      setError('Phone number must contain 10 to 15 digits.');
+      return;
+    }
+
     try {
       const resolvedLocation =
         formData.fullAddress.trim() || buildLocationLabel(formData) || '';
 
-      const user = await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        phone: formData.phone,
-        location: resolvedLocation,
-      });
+      const response = await register(
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          phone: formData.phone,
+          location: resolvedLocation,
+        },
+        {
+          redirectTo: getDefaultRouteForRole(formData.role),
+          source: 'register',
+        },
+      );
 
-      navigate(getDefaultRouteForRole(user.role), { replace: true });
+      if (response.verificationRequired) {
+        navigate('/verify-account', { replace: true });
+        return;
+      }
+
+      navigate(getDefaultRouteForRole(response.user.role), { replace: true });
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -427,9 +450,24 @@ export default function RegisterPage() {
               </span>
               <h2 className="font-display text-3xl font-bold text-slate-900">Create your account</h2>
               <p className="text-sm leading-6 text-slate-500 sm:text-base">
-                Share a few details so we can shape the experience around how you plan to use the platform.
+                Share a few details so we can shape the experience around how you plan to use the platform and send your verification OTPs.
               </p>
             </div>
+
+            {pendingVerification?.user ? (
+              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                <p className="font-semibold">You already have a verification flow waiting.</p>
+                <p className="mt-1 text-amber-800">
+                  Resume OTP verification for {pendingVerification.user.email || pendingVerification.user.phone}.
+                </p>
+                <Link
+                  to="/verify-account"
+                  className="mt-3 inline-flex text-sm font-semibold text-amber-900 underline decoration-amber-400 underline-offset-4"
+                >
+                  Continue verification
+                </Link>
+              </div>
+            ) : null}
 
             {error ? (
               <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -496,7 +534,7 @@ export default function RegisterPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+91 98765 43210"
-                  required={false}
+                  required
                   icon={Icons.phone}
                 />
                 <div className="rounded-[26px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">

@@ -115,9 +115,9 @@ function SidePanel() {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, authBusy } = useAuth();
+  const { login, authBusy, pendingVerification } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -135,10 +135,25 @@ export default function Login() {
     setError('');
 
     try {
-      const user = await login(formData);
-      const nextPath = location.state?.from?.pathname || getDefaultRouteForRole(user.role);
-      navigate(nextPath, { replace: true });
+      const nextPath = location.state?.from?.pathname || '';
+      const response = await login(
+        {
+          identifier: formData.identifier,
+          password: formData.password,
+        },
+        {
+          redirectTo: nextPath,
+          source: 'login',
+        },
+      );
+      const destination = nextPath || getDefaultRouteForRole(response.user.role);
+      navigate(destination, { replace: true });
     } catch (requestError) {
+      if (requestError.data?.verificationRequired) {
+        navigate('/verify-account', { replace: true });
+        return;
+      }
+
       setError(requestError.message);
     }
   };
@@ -158,9 +173,24 @@ export default function Login() {
               </span>
               <h2 className="font-display text-3xl font-bold text-slate-900">Access your account</h2>
               <p className="text-sm leading-6 text-slate-500 sm:text-base">
-                Enter your details to continue to your dashboard, bookings, and messages.
+                Enter your email or phone number with your password to continue to your dashboard, bookings, and messages.
               </p>
             </div>
+
+            {pendingVerification?.user ? (
+              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                <p className="font-semibold">You still have an unfinished OTP verification.</p>
+                <p className="mt-1 text-amber-800">
+                  Continue verifying {pendingVerification.user.email || pendingVerification.user.phone} before trying a fresh login.
+                </p>
+                <Link
+                  to="/verify-account"
+                  className="mt-3 inline-flex text-sm font-semibold text-amber-900 underline decoration-amber-400 underline-offset-4"
+                >
+                  Continue verification
+                </Link>
+              </div>
+            ) : null}
 
             {error ? (
               <div className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -177,12 +207,12 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-5">
               <InputField
-                label="Email address"
-                name="email"
-                type="email"
-                value={formData.email}
+                label="Email or phone number"
+                name="identifier"
+                type="text"
+                value={formData.identifier}
                 onChange={handleChange}
-                placeholder="aarav.sharma@example.in"
+                placeholder="aarav.sharma@example.in or +91 98765 43210"
                 required
                 icon={Icons.mail}
               />
@@ -215,7 +245,12 @@ export default function Login() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData(DEMO_CREDENTIALS)}
+                  onClick={() =>
+                    setFormData({
+                      identifier: DEMO_CREDENTIALS.email,
+                      password: DEMO_CREDENTIALS.password,
+                    })
+                  }
                   className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                 >
                   Fill demo credentials

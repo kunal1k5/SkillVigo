@@ -1,115 +1,294 @@
-import { createId, readDatabase, updateDatabase } from '../data/dataStore.js';
+import mongoose from 'mongoose';
+import Booking from '../models/Booking.js';
+import Skill from '../models/Skill.js';
 
 const VALID_BOOKING_STATUSES = ['pending', 'confirmed', 'completed', 'canceled'];
+const DEFAULT_BOOKING_ACCENT = 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)';
 
-function getInstructorSkillIds(skills, userId) {
-  return new Set(
-    skills.filter((skill) => skill.instructorId === userId).map((skill) => skill.id),
-  );
-}
+const BOOKING_POPULATE = [
+  {
+    path: 'skillId',
+    select: 'title price category location userId',
+    populate: {
+      path: 'userId',
+      select: 'name',
+    },
+  },
+  {
+    path: 'studentId',
+    select: 'name',
+  },
+  {
+    path: 'instructorId',
+    select: 'name',
+  },
+];
 
-function canAccessBooking(skills, booking, currentUser) {
-  if (currentUser.role === 'admin') {
-    return true;
+function normalizeObjectIdString(value) {
+  if (!value) {
+    return '';
   }
 
-  if (booking.studentId === currentUser.id) {
-    return true;
+  if (typeof value === 'string') {
+    return value;
   }
 
-  return skills.some(
-    (skill) => skill.id === booking.skillId && skill.instructorId === currentUser.id,
-  );
-}
+  if (value instanceof mongoose.Types.ObjectId) {
+    return value.toString();
+  }
 
-function hydrateBooking(booking, skills) {
-  const skill = skills.find((item) => item.id === booking.skillId);
+  if (typeof value === 'object') {
+    if ('_id' in value && value._id) {
+      return normalizeObjectIdString(value._id);
+    }
 
-  return {
-    ...booking,
-    skill: skill
-      ? {
-          id: skill.id,
-          title: skill.title,
-          price: skill.price,
-          instructor: {
-            id: skill.instructorId,
-            name: skill.instructorName,
-          },
-        }
-      : null,
-    skillTitle: skill?.title || booking.skillTitle || 'Unknown skill',
-    instructorName: skill?.instructorName || booking.instructorName || 'Unknown instructor',
-  };
+    if ('id' in value && value.id) {
+      return String(value.id);
+    }
+  }
+
+  return String(value);
 }
 
 function buildDefaultSchedule() {
   const date = new Date();
   date.setDate(date.getDate() + 2);
   date.setHours(18, 0, 0, 0);
-  return date.toISOString();
+  return date;
 }
 
-function buildBookingPayload(payload, skill, currentUser) {
-  return {
-    id: createId('booking'),
-    studentId: currentUser.id,
-    skillId: skill.id,
-    scheduledAt: payload.scheduledAt || buildDefaultSchedule(),
-    duration: payload.duration || `${skill.duration || 60} min`,
-    status: payload.status || 'pending',
-    price: Number(payload.price || skill.price || 0),
-    currency: payload.currency || skill.currency || 'INR',
-    mode: payload.mode || skill.mode || 'Local meetup',
-    location:
-      payload.location ||
-      (skill.mode?.toLowerCase().includes('online') ? 'Online room' : `${skill.area} meetup point`),
-    category: payload.category || skill.category || 'Community skill',
-    note:
-      payload.note ||
-      `Booking requested for ${skill.title}. Confirm time and final session details in chat before the meetup.`,
-    agenda: Array.isArray(payload.agenda) && payload.agenda.length
-      ? payload.agenda
-      : (skill.outcomes || []).slice(0, 3),
-    accent: payload.accent || skill.accent,
-    createdAt: new Date().toISOString(),
+function normalizeDuration(value) {
+  if (value === undefined || value === null || value === '') {
+    return '60 min';
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return `${Math.round(value)} min`;
+  }
+
+  return String(value).trim() || '60 min';
+}
+
+function normalizeMode(value) {
+  const normalizedValue = String(value || '').trim().toLowerCase();
+
+  if (normalizedValue.startsWith('online')) {
+    return 'Online session';
+  }
+
+  if (normalizedValue.startsWith('offline')) {
+    return 'Offline session';
+  }
+
+  if (normalizedValue.startsWith('hybrid')) {
+    return 'Hybrid session';
+  }
+
+  return 'Online / offline by arrangement';
+}
+
+function buildAgendaFromSkill(skill, payloadAgenda) {
+  if (Array.isArray(payloadAgenda) && payloadAgenda.length) {
+    return payloadAgenda
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .slice(0, 5);
+  }
+
+  return [
+    `Clarify your goals for ${skill.title}.`,
+    'Confirm the session structure and delivery format.',
+    'Capture next steps and follow-up actions after the session.',
+  ];
+}
+
+function resolveScheduledAt(payload) {
+  if (payload.scheduledAt) {
+    const scheduledAt = new Date(payload.scheduledAt);
+
+    if (Number.isNaN(scheduledAt.getTime())) {
+      return null;
+    }
+
+    return scheduledAt;
+  }
+
+  if (payload.date && payload.time) {
+    const scheduledAt = new Date(`${payload.date}T${payload.time}`);
+
+    if (Number.isNaN(scheduledAt.getTime())) {
+      return null;
+    }
+
+    return scheduledAt;
+  }
+
+  return buildDefaultSchedule();
+}
+
+function buildLocationLabel(mode, payload, skill) {
+  const explicitLocation = String(payload.location || payload.address || '').trim();
+
+  if (mode === 'Online session') {
+    return explicitLocation || 'Online room';
+  }
+
+  return explicitLocation || skill.location || 'Location to be confirmed';
+}
+
+function canAccessBooking(booking, currentUser) {
+  if (currentUser.role === 'admin') {
+    return true;
+  }
+
+  return (
+    normalizeObjectIdString(booking.studentId) === currentUser.id ||
+    normalizeObjectIdString(booking.instructorId) === currentUser.id
+  );
+}
+
+function canUpdateBookingStatus(booking, currentUser, nextStatus) {
+  if (currentUser.role === 'admin') {
+    return true;
+  }
+
+  const isStudent = normalizeObjectIdString(booking.studentId) === currentUser.id;
+  const isInstructor = normalizeObjectIdString(booking.instructorId) === currentUser.id;
+
+  if (nextStatus === 'canceled') {
+    return isStudent || isInstructor;
+  }
+
+  if (nextStatus === 'confirmed' || nextStatus === 'completed') {
+    return isInstructor;
+  }
+
+  return false;
+}
+
+function sortBookings(bookings) {
+  const statusRank = {
+    pending: 0,
+    confirmed: 1,
+    completed: 2,
+    canceled: 3,
   };
+
+  return [...bookings].sort((first, second) => {
+    const statusDifference =
+      (statusRank[first.status] ?? 99) - (statusRank[second.status] ?? 99);
+
+    if (statusDifference !== 0) {
+      return statusDifference;
+    }
+
+    return (
+      new Date(first.scheduledAt || first.createdAt).getTime() -
+      new Date(second.scheduledAt || second.createdAt).getTime()
+    );
+  });
+}
+
+function buildBookingResponse(booking) {
+  const skill =
+    booking.skillId && typeof booking.skillId === 'object' ? booking.skillId : null;
+  const instructor =
+    booking.instructorId && typeof booking.instructorId === 'object'
+      ? booking.instructorId
+      : skill?.userId && typeof skill.userId === 'object'
+        ? skill.userId
+        : null;
+  const student =
+    booking.studentId && typeof booking.studentId === 'object' ? booking.studentId : null;
+
+  return {
+    id: normalizeObjectIdString(booking._id),
+    status: booking.status,
+    scheduledAt: booking.scheduledAt,
+    duration: booking.duration || '60 min',
+    price: Number(booking.price || skill?.price || 0),
+    currency: booking.currency || 'INR',
+    mode: booking.mode || 'Online / offline by arrangement',
+    location: booking.location || skill?.location || 'Online room',
+    category: booking.category || skill?.category || 'Community skill',
+    note: booking.note || '',
+    agenda: Array.isArray(booking.agenda) ? booking.agenda : [],
+    accent: booking.accent || DEFAULT_BOOKING_ACCENT,
+    createdAt: booking.createdAt,
+    updatedAt: booking.updatedAt,
+    student: student
+      ? {
+          id: normalizeObjectIdString(student._id),
+          name: student.name,
+        }
+      : {
+          id: normalizeObjectIdString(booking.studentId),
+          name: '',
+        },
+    instructor: {
+      id: normalizeObjectIdString(instructor?._id || booking.instructorId),
+      name: instructor?.name || '',
+    },
+    skill: skill
+      ? {
+          id: normalizeObjectIdString(skill._id),
+          title: skill.title,
+          price: skill.price,
+          category: skill.category,
+          location: skill.location,
+          instructor: {
+            id: normalizeObjectIdString(instructor?._id || booking.instructorId),
+            name: instructor?.name || '',
+          },
+        }
+      : null,
+    skillTitle: skill?.title || 'Skill session',
+    instructorName: instructor?.name || '',
+  };
+}
+
+async function findAccessibleBooking(bookingId, currentUser) {
+  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+    return null;
+  }
+
+  const booking = await Booking.findById(bookingId).populate(BOOKING_POPULATE);
+
+  if (!booking || !canAccessBooking(booking, currentUser)) {
+    return null;
+  }
+
+  return booking;
 }
 
 export async function getMyBookings(req, res, next) {
   try {
-    const database = await readDatabase();
-    const instructorSkillIds = getInstructorSkillIds(database.skills, req.user.id);
-    const bookings = database.bookings
-      .filter(
-        (booking) =>
-          req.user.role === 'admin' ||
-          booking.studentId === req.user.id ||
-          instructorSkillIds.has(booking.skillId),
-      )
-      .map((booking) => hydrateBooking(booking, database.skills))
-      .sort((first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime());
+    const query =
+      req.user.role === 'admin'
+        ? {}
+        : {
+            $or: [{ studentId: req.user.id }, { instructorId: req.user.id }],
+          };
 
-    res.json(bookings);
+    const bookings = await Booking.find(query)
+      .populate(BOOKING_POPULATE)
+      .sort({ scheduledAt: 1, createdAt: -1 });
+
+    return res.json(sortBookings(bookings.map(buildBookingResponse)));
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
 export async function getBookingById(req, res, next) {
   try {
-    const database = await readDatabase();
-    const booking = database.bookings.find((item) => item.id === req.params.id);
+    const booking = await findAccessibleBooking(req.params.id, req.user);
 
     if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' });
+      return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    if (!canAccessBooking(database.skills, booking, req.user)) {
-      return res.status(403).json({ error: 'You do not have permission to access this booking.' });
-    }
-
-    return res.json(hydrateBooking(booking, database.skills));
+    return res.json(buildBookingResponse(booking));
   } catch (error) {
     return next(error);
   }
@@ -118,32 +297,68 @@ export async function getBookingById(req, res, next) {
 export async function createBooking(req, res, next) {
   try {
     const payload = req.body || {};
+    const skillId = String(payload.skillId || '').trim();
 
-    if (!payload.skillId) {
-      return res.status(400).json({ error: 'skillId is required to create a booking' });
+    if (!skillId) {
+      return res.status(400).json({ error: 'skillId is required to create a booking.' });
     }
 
-    let createdBooking = null;
+    if (!mongoose.Types.ObjectId.isValid(skillId)) {
+      return res.status(400).json({ error: 'Invalid skill ID.' });
+    }
 
-    const database = await updateDatabase((currentDatabase) => {
-      const skill = currentDatabase.skills.find((item) => item.id === payload.skillId);
+    const skill = await Skill.findById(skillId).populate('userId', 'name');
 
-      if (!skill) {
-        throw Object.assign(new Error('Skill not found'), { status: 404 });
-      }
+    if (!skill) {
+      return res.status(404).json({ error: 'Skill not found.' });
+    }
 
-      if (skill.instructorId === req.user.id) {
-        throw Object.assign(new Error('You cannot create a booking for your own skill.'), {
-          status: 400,
-        });
-      }
+    if (normalizeObjectIdString(skill.userId) === req.user.id) {
+      return res.status(400).json({ error: 'You cannot create a booking for your own skill.' });
+    }
 
-      createdBooking = buildBookingPayload(payload, skill, req.user);
-      currentDatabase.bookings.unshift(createdBooking);
-      return currentDatabase;
+    const existingActiveBooking = await Booking.findOne({
+      studentId: req.user.id,
+      skillId,
+      status: { $in: ['pending', 'confirmed'] },
+    }).populate(BOOKING_POPULATE);
+
+    if (existingActiveBooking) {
+      return res.status(409).json({
+        error: 'You already have an active booking request for this skill.',
+        booking: buildBookingResponse(existingActiveBooking),
+      });
+    }
+
+    const scheduledAt = resolveScheduledAt(payload);
+
+    if (!scheduledAt) {
+      return res.status(400).json({ error: 'Provide a valid booking date and time.' });
+    }
+
+    const mode = normalizeMode(payload.mode);
+    const createdBooking = await Booking.create({
+      studentId: req.user._id,
+      instructorId: skill.userId._id || skill.userId,
+      skillId: skill._id,
+      scheduledAt,
+      duration: normalizeDuration(payload.duration),
+      status: 'pending',
+      price: Number(payload.price ?? skill.price ?? 0),
+      currency: String(payload.currency || 'INR').trim().toUpperCase() || 'INR',
+      mode,
+      location: buildLocationLabel(mode, payload, skill),
+      category: String(payload.category || skill.category || 'Community skill').trim(),
+      note:
+        String(payload.note || payload.notes || '').trim() ||
+        `Booking requested for ${skill.title}. Confirm the timing and final session details before the session starts.`,
+      agenda: buildAgendaFromSkill(skill, payload.agenda),
+      accent: String(payload.accent || '').trim() || DEFAULT_BOOKING_ACCENT,
     });
 
-    return res.status(201).json(hydrateBooking(createdBooking, database.skills));
+    const hydratedBooking = await Booking.findById(createdBooking._id).populate(BOOKING_POPULATE);
+
+    return res.status(201).json(buildBookingResponse(hydratedBooking));
   } catch (error) {
     return next(error);
   }
@@ -151,47 +366,41 @@ export async function createBooking(req, res, next) {
 
 export async function updateBookingStatus(req, res, next) {
   try {
-    const nextStatus = req.body?.status;
-
-    if (!nextStatus) {
-      return res.status(400).json({ error: 'status is required' });
-    }
+    const nextStatus = String(req.body?.status || '').trim().toLowerCase();
 
     if (!VALID_BOOKING_STATUSES.includes(nextStatus)) {
-      return res.status(400).json({ error: 'status is invalid' });
+      return res.status(400).json({ error: 'status is invalid.' });
     }
 
-    let updatedBooking = null;
+    const booking = await findAccessibleBooking(req.params.id, req.user);
 
-    const database = await updateDatabase((currentDatabase) => {
-      currentDatabase.bookings = currentDatabase.bookings.map((booking) => {
-        if (booking.id !== req.params.id) {
-          return booking;
-        }
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
 
-        if (!canAccessBooking(currentDatabase.skills, booking, req.user)) {
-          throw Object.assign(new Error('You do not have permission to update this booking.'), {
-            status: 403,
-          });
-        }
-
-        updatedBooking = {
-          ...booking,
-          status: nextStatus,
-          updatedAt: new Date().toISOString(),
-        };
-
-        return updatedBooking;
+    if (!canUpdateBookingStatus(booking, req.user, nextStatus)) {
+      return res.status(403).json({
+        error: 'You do not have permission to update this booking status.',
       });
-
-      return currentDatabase;
-    });
-
-    if (!updatedBooking) {
-      return res.status(404).json({ error: 'Booking not found' });
     }
 
-    return res.json(hydrateBooking(updatedBooking, database.skills));
+    if (booking.status === 'canceled' && nextStatus !== 'canceled') {
+      return res.status(400).json({
+        error: 'A canceled booking cannot be moved to another status.',
+      });
+    }
+
+    if (booking.status === 'completed' && nextStatus !== 'completed') {
+      return res.status(400).json({
+        error: 'A completed booking cannot be moved to another status.',
+      });
+    }
+
+    booking.status = nextStatus;
+    await booking.save();
+
+    const refreshedBooking = await Booking.findById(booking._id).populate(BOOKING_POPULATE);
+    return res.json(buildBookingResponse(refreshedBooking));
   } catch (error) {
     return next(error);
   }
@@ -199,37 +408,29 @@ export async function updateBookingStatus(req, res, next) {
 
 export async function cancelBooking(req, res, next) {
   try {
-    let canceledBooking = null;
+    const booking = await findAccessibleBooking(req.params.id, req.user);
 
-    const database = await updateDatabase((currentDatabase) => {
-      currentDatabase.bookings = currentDatabase.bookings.map((booking) => {
-        if (booking.id !== req.params.id) {
-          return booking;
-        }
-
-        if (!canAccessBooking(currentDatabase.skills, booking, req.user)) {
-          throw Object.assign(new Error('You do not have permission to cancel this booking.'), {
-            status: 403,
-          });
-        }
-
-        canceledBooking = {
-          ...booking,
-          status: 'canceled',
-          updatedAt: new Date().toISOString(),
-        };
-
-        return canceledBooking;
-      });
-
-      return currentDatabase;
-    });
-
-    if (!canceledBooking) {
-      return res.status(404).json({ error: 'Booking not found' });
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    return res.json(hydrateBooking(canceledBooking, database.skills));
+    if (!canUpdateBookingStatus(booking, req.user, 'canceled')) {
+      return res.status(403).json({
+        error: 'You do not have permission to cancel this booking.',
+      });
+    }
+
+    if (booking.status === 'completed') {
+      return res.status(400).json({
+        error: 'A completed booking cannot be canceled.',
+      });
+    }
+
+    booking.status = 'canceled';
+    await booking.save();
+
+    const refreshedBooking = await Booking.findById(booking._id).populate(BOOKING_POPULATE);
+    return res.json(buildBookingResponse(refreshedBooking));
   } catch (error) {
     return next(error);
   }

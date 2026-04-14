@@ -55,7 +55,14 @@ function DetailSkeleton() {
   );
 }
 
-export default function SkillDetailPanel({ skill, onBook, onChat, isBooking = false, loading = false }) {
+export default function SkillDetailPanel({
+  skill,
+  onBook,
+  onChat,
+  isBooking = false,
+  isChatting = false,
+  loading = false,
+}) {
   if (loading) {
     return <DetailSkeleton />;
   }
@@ -170,10 +177,11 @@ export default function SkillDetailPanel({ skill, onBook, onChat, isBooking = fa
         <button
           type="button"
           onClick={() => onChat(skill)}
+          disabled={isChatting}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
         >
           <ChatIcon className="h-4 w-4" />
-          Chat
+          {isChatting ? 'Opening...' : 'Chat'}
         </button>
       </div>
     </aside>

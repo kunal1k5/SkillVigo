@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import PublicOnlyRoute from '../components/auth/PublicOnlyRoute';
 import AdminPanel from '../pages/AdminPanel';
-import BookingPage from '../pages/BookingPage';
+import BookingsDashboard from '../pages/BookingsDashboard';
 import ChatPage from '../pages/ChatPage';
 import CreateSkill from '../pages/CreateSkill';
 import Dashboard from '../pages/Dashboard';
@@ -13,6 +13,7 @@ import Profile from '../pages/Profile';
 import Register from '../pages/Register';
 import ResetPassword from '../pages/ResetPassword';
 import SearchPage from '../pages/SearchPage';
+import VerifyAccount from '../pages/VerifyAccount';
 
 function NotFound() {
   return (
@@ -32,7 +33,7 @@ export default function AppRoutes() {
       {/* Moved temp routes out for viewing */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/chat" element={<ChatPage />} />
-      <Route path="/bookings" element={<BookingPage />} />
+      <Route path="/bookings" element={<BookingsDashboard />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile/:id" element={<Profile />} />
       <Route path="/profile/edit" element={<Profile />} />
@@ -40,6 +41,7 @@ export default function AppRoutes() {
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-account" element={<VerifyAccount />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Route>

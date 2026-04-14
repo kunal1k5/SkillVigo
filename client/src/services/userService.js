@@ -4,6 +4,10 @@ export function getCurrentUserProfile() {
   return api.get('/users/me').then((response) => response.data.user);
 }
 
+export function getUserProfile(userId) {
+  return api.get(`/users/${userId}`).then((response) => response.data.user);
+}
+
 export function updateCurrentUserProfile(profileData) {
   return api.put('/users/me', profileData).then((response) => response.data.user);
 }

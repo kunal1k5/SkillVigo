@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { MessageSquare, LayoutDashboard, Calendar, Settings } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
@@ -325,7 +325,9 @@ function AuthPrompt() {
 }
 
 export default function ChatPage() {
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const requestedConversationIdRef = useRef(location.state?.conversationId || '');
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState({});
   const [activeChatId, setActiveChatId] = useState(null);
@@ -395,13 +397,17 @@ export default function ChatPage() {
         const nextConversations = sortConversations(
           (Array.isArray(response) ? response : []).map(mapConversation),
         );
+        const requestedConversationId = requestedConversationIdRef.current;
 
         setConversations(nextConversations);
         setActiveChatId((currentId) =>
           nextConversations.some((conversation) => conversation.id === currentId)
             ? currentId
-            : nextConversations[0]?.id || null,
+            : nextConversations.some((conversation) => conversation.id === requestedConversationId)
+              ? requestedConversationId
+              : nextConversations[0]?.id || null,
         );
+        requestedConversationIdRef.current = '';
       } catch (error) {
         if (!ignore) {
           setFeedback({
@@ -536,7 +542,7 @@ export default function ChatPage() {
     }
 
     const confirmed = window.confirm(
-      `Delete chat with ${conversationToDelete.name}? This will remove the full conversation history.`,
+      `Remove chat with ${conversationToDelete.name} from your inbox? It will reappear if a new message arrives.`,
     );
 
     if (!confirmed) {
@@ -570,7 +576,7 @@ export default function ChatPage() {
       );
       setFeedback({
         tone: 'success',
-        message: `Chat with ${conversationToDelete.name} deleted successfully.`,
+        message: `Chat with ${conversationToDelete.name} was removed from your inbox.`,
       });
     } catch (error) {
       setFeedback({

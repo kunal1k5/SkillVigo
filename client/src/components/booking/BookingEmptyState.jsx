@@ -4,9 +4,9 @@ export default function BookingEmptyState({ onReset }) {
       style={{
         borderRadius: '28px',
         padding: '28px',
-        background: 'rgba(255, 255, 255, 0.88)',
-        border: '1px solid rgba(148, 163, 184, 0.18)',
-        boxShadow: '0 18px 36px rgba(15, 23, 42, 0.06)',
+        background: '#ffffff',
+        border: '1px solid #e7e5e4',
+        boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
         display: 'grid',
         gap: '14px',
         minHeight: '240px',
@@ -18,8 +18,9 @@ export default function BookingEmptyState({ onReset }) {
           width: 'fit-content',
           padding: '8px 12px',
           borderRadius: '999px',
-          background: 'rgba(37, 99, 235, 0.1)',
-          color: '#1d4ed8',
+          background: '#f5f5f4',
+          color: '#44403c',
+          border: '1px solid #d6d3d1',
           fontWeight: 700,
           fontSize: '12px',
           textTransform: 'uppercase',
@@ -32,21 +33,21 @@ export default function BookingEmptyState({ onReset }) {
         Your filter is sharper than the current list.
       </h2>
       <p style={{ margin: 0, color: '#475569', lineHeight: 1.7, maxWidth: '56ch' }}>
-        Try a different keyword or reset the filters to bring back your full booking dashboard.
+        Try a different keyword or reset the filters to bring back your full booking list.
       </p>
       <div>
         <button
           type="button"
           onClick={onReset}
           style={{
-            border: 'none',
+            border: '1px solid #0f172a',
             borderRadius: '999px',
             padding: '12px 18px',
-            background: 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)',
+            background: '#0f172a',
             color: '#ffffff',
             fontWeight: 800,
             cursor: 'pointer',
-            boxShadow: '0 14px 28px rgba(37, 99, 235, 0.16)',
+            boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
           }}
         >
           Reset filters

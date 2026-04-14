@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  createOrOpenConversation,
   deleteConversation,
   getConversations,
   getMessages,
@@ -11,6 +12,7 @@ import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.use(protect);
+router.post('/conversations', createOrOpenConversation);
 router.get('/conversations', getConversations);
 router.delete('/conversations/:conversationId', deleteConversation);
 router.get('/messages/:conversationId', getMessages);

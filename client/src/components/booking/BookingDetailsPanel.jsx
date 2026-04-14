@@ -1,29 +1,31 @@
-import Button from '../common/Button';
-
 const STATUS_STYLES = {
   pending: {
     label: 'Pending approval',
-    color: '#b45309',
-    background: 'rgba(245, 158, 11, 0.16)',
-    border: 'rgba(245, 158, 11, 0.3)',
+    color: '#111827',
+    background: '#f5f5f5',
+    border: '#d4d4d8',
+    dot: '#3f3f46',
   },
   confirmed: {
     label: 'Confirmed',
-    color: '#047857',
-    background: 'rgba(16, 185, 129, 0.14)',
-    border: 'rgba(16, 185, 129, 0.28)',
+    color: '#ffffff',
+    background: '#111827',
+    border: '#111827',
+    dot: '#111827',
   },
   completed: {
     label: 'Completed',
-    color: '#1d4ed8',
-    background: 'rgba(59, 130, 246, 0.13)',
-    border: 'rgba(59, 130, 246, 0.24)',
+    color: '#111827',
+    background: '#e5e7eb',
+    border: '#d4d4d8',
+    dot: '#52525b',
   },
   canceled: {
     label: 'Canceled',
     color: '#b91c1c',
-    background: 'rgba(239, 68, 68, 0.12)',
-    border: 'rgba(239, 68, 68, 0.24)',
+    background: '#fef2f2',
+    border: '#fecaca',
+    dot: '#a8a29e',
   },
 };
 
@@ -74,9 +76,9 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
         style={{
           borderRadius: '28px',
           padding: '24px',
-          background: 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          boxShadow: '0 18px 36px rgba(15, 23, 42, 0.08)',
+          background: '#ffffff',
+          border: '1px solid #e7e5e4',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
           display: 'grid',
           gap: '14px',
         }}
@@ -92,7 +94,7 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
   const status = (booking.status || 'pending').toLowerCase();
   const statusStyle = STATUS_STYLES[status] || STATUS_STYLES.pending;
   const completedSteps = getCompletedSteps(status);
-  const title = booking.skill?.title || booking.skillTitle || booking.title || 'Premium skill session';
+  const title = booking.skill?.title || booking.skillTitle || booking.title || 'Skill session';
   const instructor =
     booking.skill?.instructor?.name ||
     booking.instructor?.name ||
@@ -120,9 +122,9 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
         style={{
           borderRadius: '28px',
           padding: '24px',
-          background: 'rgba(255, 255, 255, 0.9)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          boxShadow: '0 18px 36px rgba(15, 23, 42, 0.08)',
+          background: '#ffffff',
+          border: '1px solid #e7e5e4',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
           display: 'grid',
           gap: '18px',
         }}
@@ -157,7 +159,6 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
                 fontSize: 'clamp(1.35rem, 3vw, 1.9rem)',
                 color: '#0f172a',
                 lineHeight: 1.15,
-                fontFamily: '"Sora", "Segoe UI", sans-serif',
               }}
             >
               {title}
@@ -172,8 +173,9 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
           style={{
             borderRadius: '22px',
             padding: '18px',
-            background: booking.accent || 'linear-gradient(135deg, #1d4ed8 0%, #0f766e 100%)',
-            color: '#f8fafc',
+            background: '#fafaf9',
+            color: '#0f172a',
+            border: '1px solid #e7e5e4',
             display: 'grid',
             gap: '8px',
           }}
@@ -183,15 +185,15 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
               fontSize: '12px',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: 'rgba(248, 250, 252, 0.7)',
+              color: '#78716c',
               fontWeight: 700,
             }}
           >
             Mentor overview
           </span>
           <strong style={{ fontSize: '1.15rem' }}>{instructor}</strong>
-          <span style={{ color: 'rgba(248, 250, 252, 0.82)', lineHeight: 1.6 }}>
-            {booking.category || 'Premium coaching track'} | {booking.mode || 'Live learning format'}
+          <span style={{ color: '#57534e', lineHeight: 1.6 }}>
+            {booking.category || 'Coaching track'} | {booking.mode || 'Live learning format'}
           </span>
         </div>
 
@@ -207,7 +209,7 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
               key={item.label}
               style={{
                 borderRadius: '18px',
-                border: '1px solid rgba(148, 163, 184, 0.16)',
+                border: '1px solid #e7e5e4',
                 padding: '15px',
                 background: '#ffffff',
                 display: 'grid',
@@ -232,28 +234,43 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {status === 'pending' && onConfirm ? (
-            <Button
+            <button
               onClick={() => onConfirm(booking)}
-              size="sm"
+              type="button"
               style={{
-                background: booking.accent || 'linear-gradient(90deg, #2563eb 0%, #0f766e 100%)',
-                border: 'none',
+                background: '#111827',
+                color: '#ffffff',
+                border: '1px solid #111827',
+                borderRadius: '999px',
                 minWidth: '148px',
+                padding: '10px 16px',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
               }}
             >
               Confirm booking
-            </Button>
+            </button>
           ) : null}
 
           {(status === 'pending' || status === 'confirmed') && onCancel ? (
-            <Button
+            <button
               onClick={() => onCancel(booking)}
-              variant="outline"
-              size="sm"
-              style={{ minWidth: '128px', background: '#ffffff' }}
+              type="button"
+              style={{
+                minWidth: '128px',
+                background: '#ffffff',
+                color: '#0f172a',
+                border: '1px solid #d6d3d1',
+                borderRadius: '999px',
+                padding: '10px 16px',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
             >
               Cancel slot
-            </Button>
+            </button>
           ) : null}
         </div>
       </section>
@@ -262,9 +279,9 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
         style={{
           borderRadius: '28px',
           padding: '24px',
-          background: 'rgba(255, 255, 255, 0.88)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          boxShadow: '0 18px 36px rgba(15, 23, 42, 0.06)',
+          background: '#ffffff',
+          border: '1px solid #e7e5e4',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
           display: 'grid',
           gap: '18px',
         }}
@@ -290,8 +307,8 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
                       height: '14px',
                       marginTop: '3px',
                       borderRadius: '999px',
-                      background: isComplete ? '#0f766e' : '#cbd5e1',
-                      boxShadow: isCurrent ? '0 0 0 5px rgba(15, 118, 110, 0.14)' : 'none',
+                      background: isComplete ? statusStyle.dot : '#d6d3d1',
+                      boxShadow: isCurrent ? '0 0 0 5px rgba(24, 24, 27, 0.08)' : 'none',
                     }}
                   />
                   {index < TIMELINE_STEPS.length - 1 ? (
@@ -301,7 +318,7 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
                         top: '20px',
                         width: '2px',
                         bottom: '-18px',
-                        background: isComplete ? 'rgba(15, 118, 110, 0.4)' : 'rgba(203, 213, 225, 0.9)',
+                        background: isComplete ? 'rgba(24, 24, 27, 0.28)' : '#e7e5e4',
                       }}
                     />
                   ) : null}
@@ -320,35 +337,51 @@ export default function BookingDetailsPanel({ booking, onConfirm, onCancel }) {
         style={{
           borderRadius: '28px',
           padding: '24px',
-          background: 'rgba(15, 23, 42, 0.96)',
-          color: '#f8fafc',
-          boxShadow: '0 18px 36px rgba(15, 23, 42, 0.16)',
+          background: '#ffffff',
+          color: '#0f172a',
+          border: '1px solid #e7e5e4',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)',
           display: 'grid',
           gap: '14px',
         }}
       >
         <div style={{ display: 'grid', gap: '6px' }}>
           <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Session brief</h3>
-          <p style={{ margin: 0, color: 'rgba(248, 250, 252, 0.72)', lineHeight: 1.6 }}>
+          <p style={{ margin: 0, color: '#57534e', lineHeight: 1.6 }}>
             Quick agenda points to keep you prepared before the call starts.
           </p>
         </div>
 
         <div style={{ display: 'grid', gap: '10px' }}>
-          {(booking.agenda || []).map((item) => (
+          {(booking.agenda || []).length ? (
+            (booking.agenda || []).map((item) => (
+              <div
+                key={item}
+                style={{
+                  borderRadius: '18px',
+                  padding: '14px 16px',
+                  background: '#fafaf9',
+                  border: '1px solid #e7e5e4',
+                  lineHeight: 1.6,
+                }}
+              >
+                {item}
+              </div>
+            ))
+          ) : (
             <div
-              key={item}
               style={{
                 borderRadius: '18px',
                 padding: '14px 16px',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(248, 250, 252, 0.08)',
+                background: '#fafaf9',
+                border: '1px solid #e7e5e4',
+                color: '#57534e',
                 lineHeight: 1.6,
               }}
             >
-              {item}
+              No agenda notes have been added for this booking yet.
             </div>
-          ))}
+          )}
         </div>
       </section>
     </aside>

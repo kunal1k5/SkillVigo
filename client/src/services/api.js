@@ -41,7 +41,12 @@ api.interceptors.response.use(
       error.message ||
       'Something went wrong while talking to the server.';
 
-    return Promise.reject(new Error(message));
+    const normalizedError = new Error(message);
+    normalizedError.status = error.response?.status || 0;
+    normalizedError.data = error.response?.data || null;
+    normalizedError.originalError = error;
+
+    return Promise.reject(normalizedError);
   },
 );
 

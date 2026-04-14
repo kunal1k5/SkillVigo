@@ -13,7 +13,7 @@ router.get('/me', protect, getUserProfile);
 router.put('/me', protect, updateUserProfile);
 router.get('/me/skills', protect, getUserSkills);
 router.get('/me/reviews', protect, getUserReviews);
-router.get('/:id', protect, getUserProfile);
+router.get('/:id', getUserProfile);
 router.get('/:id/skills', getUserSkills);
 router.get('/:id/reviews', getUserReviews);
 router.put('/:id', protect, updateUserProfile);

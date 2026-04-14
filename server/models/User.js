@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+function normalizePhoneForStorage(value) {
+  const digitsOnly = String(value || '').trim().replace(/\D/g, '');
+  return digitsOnly || undefined;
+}
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -26,11 +31,71 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    trim: true,
+    set: normalizePhoneForStorage,
   },
   location: {
     type: String,
     trim: true,
+  },
+  country: {
+    type: String,
+    trim: true,
+  },
+  state: {
+    type: String,
+    trim: true,
+  },
+  city: {
+    type: String,
+    trim: true,
+  },
+  fullAddress: {
+    type: String,
+    trim: true,
+  },
+  bio: {
+    type: String,
+    trim: true,
+  },
+  website: {
+    type: String,
+    trim: true,
+  },
+  avatarUrl: {
+    type: String,
+    trim: true,
+  },
+  emailVerified: {
+    type: Boolean,
+    default: true,
+  },
+  phoneVerified: {
+    type: Boolean,
+    default: true,
+  },
+  emailOtpHash: {
+    type: String,
+    select: false,
+  },
+  emailOtpExpires: {
+    type: Date,
+    select: false,
+  },
+  emailOtpLastSentAt: {
+    type: Date,
+    select: false,
+  },
+  phoneOtpHash: {
+    type: String,
+    select: false,
+  },
+  phoneOtpExpires: {
+    type: Date,
+    select: false,
+  },
+  phoneOtpLastSentAt: {
+    type: Date,
+    select: false,
   },
   resetPasswordToken: {
     type: String,
@@ -45,6 +110,16 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+userSchema.index(
+  { phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      phone: { $exists: true, $type: 'string' },
+    },
+  },
+);
 
 const User = mongoose.model('User', userSchema);
 

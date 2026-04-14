@@ -5,6 +5,16 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import PageContainer from '../components/layout/PageContainer';
 import useAuth from '../hooks/useAuth';
+import { getDashboardData } from '../services/dashboardService';
+import { deleteSkill as deleteSkillRequest } from '../services/skillService';
+
+const EMPTY_DASHBOARD_DATA = {
+  stats: [],
+  skills: [],
+  bookings: [],
+  activities: [],
+  conversations: [],
+};
 
 const STUB_DATA = {
   provider: {
@@ -195,7 +205,9 @@ function StatsCard({ title, value, icon }) {
   );
 }
 
-function SkillList({ skills }) {
+function SkillList({ skills, onDeleteSkill, deletingSkillId = '' }) {
+  const skillItems = Array.isArray(skills) ? skills : [];
+
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -210,7 +222,7 @@ function SkillList({ skills }) {
         </Link>
       </div>
       <div className="divide-y divide-slate-100 p-2">
-        {skills.map((skill) => (
+        {skillItems.map((skill) => (
           <div
             key={skill.id}
             className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl hover:bg-slate-50 transition-colors"
@@ -228,28 +240,31 @@ function SkillList({ skills }) {
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                Delete
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteSkill?.(skill)}
+                  disabled={deletingSkillId === skill.id}
+                  className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  {deletingSkillId === skill.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
     </div>
   );
 }
 
 function BookingList({ bookings, title = 'Recent Bookings', role }) {
+  const bookingItems = Array.isArray(bookings) ? bookings : [];
   const personLabel = role === 'provider' ? 'Client' : 'Provider';
 
   return (
@@ -260,7 +275,7 @@ function BookingList({ bookings, title = 'Recent Bookings', role }) {
         </h2>
       </div>
       <div className="divide-y divide-slate-100 p-2">
-        {bookings.map((booking) => (
+        {bookingItems.map((booking) => (
           <div
             key={booking.id}
             className="p-4 flex flex-col gap-4 rounded-xl hover:bg-slate-50 transition-colors sm:flex-row sm:items-center sm:justify-between"
@@ -299,6 +314,8 @@ function BookingList({ bookings, title = 'Recent Bookings', role }) {
 }
 
 function ActivityFeed({ activities }) {
+  const activityItems = Array.isArray(activities) ? activities : [];
+
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
@@ -307,7 +324,7 @@ function ActivityFeed({ activities }) {
         </h2>
       </div>
       <div className="divide-y divide-slate-100 p-4">
-        {activities.map((activity) => (
+        {activityItems.map((activity) => (
           <div key={activity.id} className="py-4 first:pt-2 last:pb-2 flex gap-4 items-start">
             <div className="mt-1 h-2 w-2 rounded-full bg-blue-500 shrink-0" />
             <div className="flex flex-col gap-1">
@@ -322,14 +339,16 @@ function ActivityFeed({ activities }) {
 }
 
 function MessageCenter({ conversations }) {
-  const [activeId, setActiveId] = useState(conversations[0]?.id || '');
-  const activeConversation = conversations.find((conversation) => conversation.id === activeId) || conversations[0];
+  const conversationItems = Array.isArray(conversations) ? conversations : [];
+  const [activeId, setActiveId] = useState(conversationItems[0]?.id || '');
+  const activeConversation =
+    conversationItems.find((conversation) => conversation.id === activeId) || conversationItems[0];
 
   useEffect(() => {
-    if (!activeId && conversations[0]?.id) {
-      setActiveId(conversations[0].id);
+    if (!activeId && conversationItems[0]?.id) {
+      setActiveId(conversationItems[0].id);
     }
-  }, [activeId, conversations]);
+  }, [activeId, conversationItems]);
 
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
@@ -338,10 +357,10 @@ function MessageCenter({ conversations }) {
           <h2 className="text-lg flex items-center gap-2 font-bold text-slate-900">
             <MessageSquare className="w-5 h-5 text-indigo-500" /> Recent Messages
           </h2>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {conversations.map((conversation) => (
-            <button
+          </div>
+          <div className="divide-y divide-slate-100">
+            {conversationItems.map((conversation) => (
+              <button
               key={conversation.id}
               type="button"
               onClick={() => setActiveId(conversation.id)}
@@ -386,7 +405,7 @@ function MessageCenter({ conversations }) {
               </Link>
             </div>
             <div className="space-y-4 bg-slate-50 p-6">
-              {activeConversation.messages.map((message) => (
+              {(activeConversation.messages || []).map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
@@ -496,7 +515,13 @@ function SettingsPanel({ currentUser, formData, onChange, onSubmit, saveMessage 
   );
 }
 
-function DashboardOverview({ currentUser, data, role }) {
+function DashboardOverview({
+  currentUser,
+  data,
+  role,
+  onDeleteSkill,
+  deletingSkillId,
+}) {
   return (
     <>
       <SectionHeader
@@ -513,7 +538,11 @@ function DashboardOverview({ currentUser, data, role }) {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2">
           {role === 'provider' ? (
-            <SkillList skills={data.skills} />
+            <SkillList
+              skills={data.skills}
+              onDeleteSkill={onDeleteSkill}
+              deletingSkillId={deletingSkillId}
+            />
           ) : (
             <BookingList bookings={data.bookings.slice(0, 3)} role={role} />
           )}
@@ -527,13 +556,16 @@ function DashboardOverview({ currentUser, data, role }) {
 }
 
 export default function Dashboard() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading, updateProfile } = useAuth();
   const [activeNav, setActiveNav] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
+  const [dashboardData, setDashboardData] = useState(EMPTY_DASHBOARD_DATA);
+  const [loadError, setLoadError] = useState('');
+  const [deletingSkillId, setDeletingSkillId] = useState('');
 
   const role = currentUser?.role === 'provider' ? 'provider' : 'seeker';
-  const data = STUB_DATA[role];
+  const data = dashboardData || EMPTY_DASHBOARD_DATA;
   const isProvider = role === 'provider';
 
   const [settingsForm, setSettingsForm] = useState({
@@ -545,9 +577,54 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
-  }, [role]);
+    let ignore = false;
+
+    const loadDashboard = async () => {
+      if (authLoading) {
+        return;
+      }
+
+      if (!currentUser?.id) {
+        if (!ignore) {
+          setDashboardData(EMPTY_DASHBOARD_DATA);
+          setLoadError('');
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (!ignore) {
+        setLoading(true);
+        setLoadError('');
+      }
+
+      try {
+        const nextDashboard = await getDashboardData();
+
+        if (!ignore) {
+          setDashboardData({
+            ...EMPTY_DASHBOARD_DATA,
+            ...(nextDashboard || {}),
+          });
+        }
+      } catch (error) {
+        if (!ignore) {
+          setDashboardData(EMPTY_DASHBOARD_DATA);
+          setLoadError(error.message || 'Could not load your dashboard right now.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      ignore = true;
+    };
+  }, [authLoading, currentUser?.id, currentUser?.role]);
 
   useEffect(() => {
     setSettingsForm({
@@ -601,15 +678,74 @@ export default function Dashboard() {
     setSaveMessage('');
   };
 
-  const handleSettingsSubmit = (event) => {
+  const handleSettingsSubmit = async (event) => {
     event.preventDefault();
-    setSaveMessage('Settings updated successfully.');
+    setSaveMessage('');
+
+    if ((settingsForm.email || '').trim() !== (currentUser?.email || '').trim()) {
+      window.alert('Email changes are not available from dashboard settings yet.');
+      return;
+    }
+
+    try {
+      await updateProfile({
+        name: settingsForm.name,
+        phone: settingsForm.phone,
+        location: settingsForm.location,
+        bio: settingsForm.bio,
+      });
+      setSaveMessage('Settings updated successfully.');
+    } catch (error) {
+      window.alert(error.message || 'Could not update your settings right now.');
+    }
+  };
+
+  const handleDeleteSkill = async (skill) => {
+    if (!skill?.id || deletingSkillId) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${skill.name}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingSkillId(skill.id);
+
+    try {
+      await deleteSkillRequest(skill.id);
+      setDashboardData((current) => ({
+        ...current,
+        skills: (current.skills || []).filter((item) => item.id !== skill.id),
+      }));
+
+      try {
+        const nextDashboard = await getDashboardData();
+        setDashboardData({
+          ...EMPTY_DASHBOARD_DATA,
+          ...(nextDashboard || {}),
+        });
+      } catch {
+        // Keep the optimistic update if the silent refresh fails.
+      }
+    } catch (error) {
+      window.alert(error.message || 'Could not delete this skill right now.');
+    } finally {
+      setDeletingSkillId('');
+    }
   };
 
   const renderActiveSection = () => {
     switch (activeNav) {
       case 'skills':
-        return <SkillList skills={data.skills || []} />;
+        return (
+          <SkillList
+            skills={data.skills || []}
+            onDeleteSkill={handleDeleteSkill}
+            deletingSkillId={deletingSkillId}
+          />
+        );
       case 'bookings':
         return <BookingList bookings={data.bookings} role={role} title="All Recent Bookings" />;
       case 'messages':
@@ -626,7 +762,15 @@ export default function Dashboard() {
         );
       case 'dashboard':
       default:
-        return <DashboardOverview currentUser={currentUser} data={data} role={role} />;
+        return (
+          <DashboardOverview
+            currentUser={currentUser}
+            data={data}
+            role={role}
+            onDeleteSkill={handleDeleteSkill}
+            deletingSkillId={deletingSkillId}
+          />
+        );
     }
   };
 
@@ -644,14 +788,32 @@ export default function Dashboard() {
           />
 
           <main className="flex-1 flex flex-col gap-8 min-w-0">
-            {loading ? (
+            {authLoading || loading ? (
               <div className="flex h-64 items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
               </div>
             ) : activeNav === 'dashboard' ? (
-              renderActiveSection()
+              <>
+                {loadError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700">
+                    {loadError}
+                  </div>
+                ) : null}
+                <DashboardOverview
+                  currentUser={currentUser}
+                  data={data}
+                  role={role}
+                  onDeleteSkill={handleDeleteSkill}
+                  deletingSkillId={deletingSkillId}
+                />
+              </>
             ) : (
               <>
+                {loadError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700">
+                    {loadError}
+                  </div>
+                ) : null}
                 <SectionHeader title={sectionMeta.title} description={sectionMeta.description} />
                 {renderActiveSection()}
               </>

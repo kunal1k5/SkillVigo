@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Settings } from 'lucide-react';
+import Loader from '../components/common/Loader';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import useAuth from '../hooks/useAuth';
+import {
+  getCurrentUserProfile,
+  getUserProfile,
+} from '../services/userService';
 
 // STUB DATA for demonstration
 const MOCK_PROFILE = {
@@ -42,12 +47,12 @@ const MOCK_PROFILE = {
 
 // COMPONENTS
 
-const VerifiedBadge = () => (
+const VerifiedBadge = ({ roleLabel = 'Member' }) => (
   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
     <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
     </svg>
-    Verified Provider
+    Verified {roleLabel}
   </span>
 );
 
@@ -81,7 +86,7 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
         <div>
           <div className="flex flex-wrap items-center gap-3 mb-1">
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{profile.name}</h1>
-            {profile.isVerified && <VerifiedBadge />}
+            {profile.isVerified && <VerifiedBadge roleLabel={profile.role} />}
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-medium">
             <span className="capitalize text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{profile.role}</span>
@@ -217,8 +222,20 @@ function buildProfileFromUser(currentUser) {
     ? currentUser.skills.map((skill, index) => ({
         id: skill.id || skill._id || index + 1,
         title: skill.title || skill.name || 'Untitled skill',
-        price: skill.price || skill.rate || '/session',
-        experience: skill.experience || 'Available',
+        price:
+          typeof skill.price === 'number'
+            ? `${new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0,
+              }).format(skill.price)}/session`
+            : skill.price || skill.rate || '/session',
+        experience:
+          typeof skill.experience === 'number'
+            ? skill.experience > 0
+              ? `${skill.experience}+ yrs`
+              : 'Newly added'
+            : skill.experience || 'Available',
       }))
     : [];
 
@@ -227,7 +244,10 @@ function buildProfileFromUser(currentUser) {
     name: currentUser.name || 'SkillVigo member',
     role: normalizedRole || 'member',
     location: currentUser.location || 'Location not added yet',
-    isVerified: Boolean(currentUser.isVerified),
+    isVerified:
+      typeof currentUser.isVerified === 'boolean'
+        ? currentUser.isVerified
+        : Boolean(currentUser.emailVerified && currentUser.phoneVerified),
     rating:
       typeof currentUser.rating === 'number'
         ? currentUser.rating
@@ -545,10 +565,15 @@ function SettingsPanel({
 }
 
 export default function Profile() {
+  const { id: profileId } = useParams();
   const location = useLocation();
   const { currentUser, updateProfile, authBusy, isAuthenticated } = useAuth();
-  const isOwnProfile = Boolean(currentUser);
-  const profile = useMemo(() => buildProfileFromUser(currentUser), [currentUser]);
+  const isOwnProfile = Boolean(currentUser && (!profileId || profileId === currentUser.id));
+  const [profileData, setProfileData] = useState(null);
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const profileSource = profileData || (isOwnProfile ? currentUser : null);
+  const profile = useMemo(() => buildProfileFromUser(profileSource), [profileSource]);
   const defaultTab = useMemo(
     () => (location.pathname === '/profile/edit' && isOwnProfile
       ? 'settings'
@@ -595,6 +620,48 @@ export default function Profile() {
   useEffect(() => {
     setSettingsForm(createSettingsForm(profile));
   }, [profile]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadProfile = async () => {
+      if (!profileId && !isAuthenticated) {
+        setProfileData(null);
+        setProfileError('');
+        setProfileBusy(false);
+        return;
+      }
+
+      setProfileBusy(true);
+      setProfileError('');
+
+      try {
+        const nextProfile =
+          !profileId || (currentUser && profileId === currentUser.id)
+            ? await getCurrentUserProfile()
+            : await getUserProfile(profileId);
+
+        if (!isCancelled) {
+          setProfileData(nextProfile);
+        }
+      } catch (requestError) {
+        if (!isCancelled) {
+          setProfileData(null);
+          setProfileError(requestError.message || 'Could not load this profile right now.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setProfileBusy(false);
+        }
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser, isAuthenticated, profileId]);
 
   useEffect(() => {
     if (!saveState.message) {
@@ -682,7 +749,7 @@ export default function Profile() {
     }
 
     try {
-      await updateProfile({
+      const updatedUser = await updateProfile({
         name: settingsForm.name,
         phone: settingsForm.phone,
         location: settingsForm.location,
@@ -690,6 +757,8 @@ export default function Profile() {
         website: settingsForm.website,
         avatarUrl: settingsForm.avatarUrl,
       });
+      const refreshedProfile = await getCurrentUserProfile();
+      setProfileData(refreshedProfile || updatedUser);
 
       setSaveState({
         tone: 'success',
@@ -703,11 +772,93 @@ export default function Profile() {
     }
   };
 
+  if (!profileId && !isAuthenticated && !profileBusy) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col">
+        <Navbar />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-10 md:py-14">
+          <section className="rounded-[30px] border border-slate-200 bg-white p-8 shadow-sm">
+            <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
+              Profile access
+            </span>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">
+              Sign in to open your profile settings.
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+              Your personal profile data now comes from the backend. Sign in first so we can load your account details, saved photo, bio, and profile settings.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                to="/login"
+                className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Go to login
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+              >
+                Create account
+              </Link>
+            </div>
+          </section>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (profileBusy && !profileData && !isOwnProfile) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <Loader size="lg" message="Loading profile..." />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (profileError && !profileData && !isOwnProfile) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col">
+        <Navbar />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-10 md:py-14">
+          <section className="rounded-[30px] border border-rose-200 bg-white p-8 shadow-sm">
+            <span className="inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-rose-700">
+              Could not load profile
+            </span>
+            <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">{profileError}</p>
+            <Link
+              to="/"
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Back to home
+            </Link>
+          </section>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 md:py-12 space-y-8">
+        {profileBusy ? (
+          <div className="flex justify-center">
+            <Loader size="md" message="Refreshing profile..." />
+          </div>
+        ) : null}
+
+        {profileError && profileData ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            {profileError}
+          </div>
+        ) : null}
         
         {/* Top Profile Header */}
         <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />

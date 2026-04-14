@@ -1,5 +1,9 @@
 import api from './api';
 
+export function createOrOpenConversation(payload) {
+  return api.post('/chat/conversations', payload).then((response) => response.data);
+}
+
 export function getConversations() {
   return api.get('/chat/conversations').then((response) => response.data);
 }

@@ -20,6 +20,7 @@ import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
 import useAuth from '../hooks/useAuth';
 import { createBooking } from '../services/bookingService';
+import { createOrOpenConversation } from '../services/chatService';
 import { getAllSkills } from '../services/skillService';
 
 function FilterIcon({ className = 'h-5 w-5' }) {
@@ -139,7 +140,7 @@ function NoResultsState({ onReset }) {
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -155,6 +156,7 @@ export default function SearchPage() {
   const [fetchAlert, setFetchAlert] = useState(null);
   const [actionAlert, setActionAlert] = useState(null);
   const [bookingSkillId, setBookingSkillId] = useState('');
+  const [chatSkillId, setChatSkillId] = useState('');
 
   const trimmedQuery = query.trim();
   const deferredSearchTerm = useDeferredValue(debouncedQuery);
@@ -434,17 +436,69 @@ export default function SearchPage() {
     }
   };
 
-  const handleChat = (skill) => {
+  const handleChat = async (skill) => {
     if (!skill) {
       return;
     }
 
-    setActionAlert({
-      tone: 'info',
-      title: 'Opening your chat workspace',
-      description: `Continue the conversation with ${skill.providerName} from the messages area.`,
-    });
-    navigate('/chat');
+    if (!isAuthenticated) {
+      setActionAlert({
+        tone: 'warning',
+        title: 'Sign in to start a chat',
+        description: 'You need an account before opening a conversation with a provider.',
+      });
+      navigate('/login', { state: { from: { pathname: '/search' } } });
+      return;
+    }
+
+    const providerId = skill.provider?.id || '';
+
+    if (!providerId) {
+      setActionAlert({
+        tone: 'warning',
+        title: 'Live chat is unavailable for this card',
+        description: 'This listing is not connected to a real provider account yet, so a conversation cannot be created.',
+      });
+      return;
+    }
+
+    if (providerId === currentUser?.id) {
+      setActionAlert({
+        tone: 'warning',
+        title: 'This is your own listing',
+        description: 'Open the messages page to manage incoming chats from learners.',
+      });
+      navigate('/chat');
+      return;
+    }
+
+    try {
+      setChatSkillId(skill.id);
+      const response = await createOrOpenConversation({
+        skillId: skill.id,
+        participantId: providerId,
+      });
+      const conversationId = response?.conversation?.id || '';
+
+      setActionAlert({
+        tone: 'success',
+        title: response?.created ? 'Conversation started' : 'Conversation opened',
+        description: `Your chat with ${skill.providerName} is ready in the messages area.`,
+      });
+      navigate('/chat', {
+        state: {
+          conversationId,
+        },
+      });
+    } catch (requestError) {
+      setActionAlert({
+        tone: 'error',
+        title: 'Could not open chat',
+        description: requestError.message || 'Please try again in a moment.',
+      });
+    } finally {
+      setChatSkillId('');
+    }
   };
 
   return (
@@ -607,6 +661,7 @@ export default function SearchPage() {
                       onBook={handleCreateBooking}
                       onChat={handleChat}
                       isBooking={bookingSkillId === skill.id}
+                      isChatting={chatSkillId === skill.id}
                     />
                   ))}
                 </div>
@@ -622,6 +677,7 @@ export default function SearchPage() {
                   onBook={handleCreateBooking}
                   onChat={handleChat}
                   isBooking={bookingSkillId === selectedSkill?.id}
+                  isChatting={chatSkillId === selectedSkill?.id}
                   loading={loading}
                 />
               </aside>

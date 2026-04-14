@@ -1,5 +1,10 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import {
+  getPendingVerificationChannels,
+  isUserFullyVerified,
+} from '../utils/verification.js';
+import { sanitizeUser } from '../utils/auth.js';
 
 export const protect = async (req, res, next) => {
   try {
@@ -27,6 +32,16 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized access.',
+      });
+    }
+
+    if (!isUserFullyVerified(user)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Verify your email and phone OTP before accessing protected resources.',
+        verificationRequired: true,
+        pendingChannels: getPendingVerificationChannels(user),
+        user: sanitizeUser(user),
       });
     }
 

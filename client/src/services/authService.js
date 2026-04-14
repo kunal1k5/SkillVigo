@@ -12,6 +12,14 @@ export function getCurrentUser() {
   return api.get('/auth/me').then((response) => response.data);
 }
 
+export function resendVerificationOtp(payload) {
+  return api.post('/auth/resend-verification-otp', payload).then((response) => response.data);
+}
+
+export function verifyOtp(payload) {
+  return api.post('/auth/verify-otp', payload).then((response) => response.data);
+}
+
 export function requestPasswordReset(payload) {
   return api.post('/auth/forgot-password', payload).then((response) => response.data);
 }
