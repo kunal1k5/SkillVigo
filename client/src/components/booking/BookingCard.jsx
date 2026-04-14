@@ -114,19 +114,19 @@ export default function BookingCard({
       onClick={handleSelect}
       onKeyDown={handleKeyDown}
       aria-pressed={isActive}
-      className={`group relative overflow-hidden rounded-3xl border bg-white p-5 text-left transition ${
+      className={`group relative overflow-hidden rounded-2xl border bg-white p-4 text-left transition ${
         isActive
-          ? 'border-slate-900 shadow-[0_18px_40px_rgba(15,23,42,0.11)]'
-          : 'border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]'
+          ? 'border-slate-900 shadow-[0_12px_28px_rgba(15,23,42,0.1)]'
+          : 'border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-[0_10px_22px_rgba(15,23,42,0.07)]'
       }`}
     >
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-slate-100">
+      <div className="absolute inset-x-0 top-0 h-1 bg-slate-100">
         <div className={`h-full ${statusStyle.progress}`} style={{ width: getProgressWidth(status) }} />
       </div>
 
-      <div className="mt-2 grid gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="grid gap-2">
+      <div className="mt-1.5 grid gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="grid min-w-0 gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusStyle.pill}`}>
                 {statusStyle.label}
@@ -135,33 +135,33 @@ export default function BookingCard({
                 {booking.category || 'Session'}
               </span>
             </div>
-            <h3 className="text-xl font-semibold leading-tight text-slate-900">{title}</h3>
+            <h3 className="text-base font-semibold leading-tight text-slate-900 sm:text-lg">{title}</h3>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-right">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Fee</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">
+            <p className="mt-1 text-base font-semibold text-slate-900 sm:text-lg">
               {formatCurrency(booking.price ?? booking.skill?.price, booking.currency)}
             </p>
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Schedule</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">{formatSchedule(bookingDate)}</p>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Schedule</p>
+            <p className="mt-1 text-xs font-semibold text-slate-900 sm:text-sm">{formatSchedule(bookingDate)}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{counterpart.label}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">{counterpart.name}</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{counterpart.label}</p>
+            <p className="mt-1 text-xs font-semibold text-slate-900 sm:text-sm">{counterpart.name}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Mode</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">{booking.mode || 'Session'}</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Mode</p>
+            <p className="mt-1 text-xs font-semibold text-slate-900 sm:text-sm">{booking.mode || 'Session'}</p>
           </div>
         </div>
 
-        <p className="text-sm leading-6 text-slate-600">
+        <p className="text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
           {booking.note || 'Review key session details and keep this booking updated as it progresses.'}
         </p>
 
@@ -174,7 +174,7 @@ export default function BookingCard({
                 onConfirm(booking);
               }}
               disabled={isBusy}
-              className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-full bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
             >
               {isBusy ? 'Updating...' : 'Confirm'}
             </button>
@@ -188,7 +188,7 @@ export default function BookingCard({
                 onComplete(booking);
               }}
               disabled={isBusy}
-              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
             >
               {isBusy ? 'Updating...' : 'Mark completed'}
             </button>
@@ -202,7 +202,7 @@ export default function BookingCard({
                 onCancel(booking);
               }}
               disabled={isBusy}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
             >
               {isBusy ? 'Updating...' : 'Cancel'}
             </button>
@@ -214,7 +214,7 @@ export default function BookingCard({
               event.stopPropagation();
               handleSelect();
             }}
-            className="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            className="rounded-full border border-slate-200 bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 sm:text-sm"
           >
             View details
           </button>
