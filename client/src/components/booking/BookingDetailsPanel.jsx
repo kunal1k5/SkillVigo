@@ -128,7 +128,7 @@ export default function BookingDetailsPanel({
         </div>
 
         <div className="grid gap-1.5">
-          <h2 className="text-xl font-semibold leading-tight text-slate-900">{title}</h2>
+          <h2 className="text-lg font-semibold leading-tight text-slate-900 sm:text-[1.1rem]">{title}</h2>
           <p className="text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
             {booking.note || 'Detailed session notes will be visible here before and after the booking.'}
           </p>
@@ -157,7 +157,7 @@ export default function BookingDetailsPanel({
               type="button"
               onClick={() => onConfirm(booking)}
               disabled={isBusy}
-              className="rounded-md bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
+              className="rounded-lg bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70 sm:text-xs"
             >
               {isBusy ? 'Updating...' : 'Confirm booking'}
             </button>
@@ -168,7 +168,7 @@ export default function BookingDetailsPanel({
               type="button"
               onClick={() => onComplete(booking)}
               disabled={isBusy}
-              className="rounded-md bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
+              className="rounded-lg bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70 sm:text-xs"
             >
               {isBusy ? 'Updating...' : 'Mark completed'}
             </button>
@@ -179,7 +179,7 @@ export default function BookingDetailsPanel({
               type="button"
               onClick={() => onCancel(booking)}
               disabled={isBusy}
-              className="rounded-md border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 sm:text-xs"
             >
               {isBusy ? 'Updating...' : 'Cancel booking'}
             </button>
