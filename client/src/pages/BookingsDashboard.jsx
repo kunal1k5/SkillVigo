@@ -318,7 +318,7 @@ function AuthPrompt() {
 function EmptyBookingsState({ roleMeta }) {
   return (
     <section className="grid min-h-[180px] content-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <span className="w-fit rounded-sm border border-slate-300 bg-slate-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
+      <span className="inline-flex self-start justify-self-start rounded-sm border border-slate-300 bg-slate-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
         Booking list is empty
       </span>
       <h2 className="text-[clamp(1.05rem,2.2vw,1.4rem)] font-semibold text-slate-900">{roleMeta.emptyTitle}</h2>
@@ -591,7 +591,7 @@ export default function BookingsDashboard() {
           <section className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 lg:grid-cols-[minmax(0,1.2fr)_300px]">
             <div className="grid gap-3">
               <div className="grid gap-2">
-                <span className="w-fit rounded-sm border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
+                <span className="inline-flex self-start justify-self-start rounded-sm border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
                   Booking workspace
                 </span>
                 <div className="grid gap-2">
