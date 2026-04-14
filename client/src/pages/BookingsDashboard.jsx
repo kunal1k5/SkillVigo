@@ -64,16 +64,16 @@ function getCounterpartMeta(booking = {}, currentUser = null) {
   if (isProviderRole(currentUser?.role || '')) {
     return {
       label: 'Learner',
-      name: booking.student?.name || 'Learner',
+      name: booking?.student?.name || 'Learner',
     };
   }
 
   return {
     label: 'Provider',
     name:
-      booking.instructor?.name ||
-      booking.skill?.instructor?.name ||
-      booking.instructorName ||
+      booking?.instructor?.name ||
+      booking?.skill?.instructor?.name ||
+      booking?.instructorName ||
       'Provider',
   };
 }
