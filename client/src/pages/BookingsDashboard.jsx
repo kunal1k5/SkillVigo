@@ -607,7 +607,7 @@ export default function BookingsDashboard() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/search"
-                  className="inline-flex h-9 min-h-0 items-center justify-center whitespace-nowrap rounded-lg bg-slate-900 px-3 text-[11px] font-semibold text-white transition hover:bg-black sm:text-xs"
+                  className="inline-flex h-8 min-h-0 items-center justify-center whitespace-nowrap rounded-lg bg-slate-900 px-3 text-[11px] font-semibold text-white transition hover:bg-black sm:text-xs"
                 >
                   {roleMeta.primaryCta}
                 </Link>
@@ -615,7 +615,7 @@ export default function BookingsDashboard() {
                   type="button"
                   onClick={() => loadBookings({ silent: true })}
                   disabled={refreshing || loading}
-                  className="inline-flex h-9 min-h-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 sm:text-xs"
+                  className="inline-flex h-8 min-h-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 sm:text-xs"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
                   {refreshing ? 'Refreshing...' : 'Refresh bookings'}
@@ -685,7 +685,7 @@ export default function BookingsDashboard() {
                     key={filter.id}
                     type="button"
                     onClick={() => setStatusFilter(filter.id)}
-                    className={`h-7 min-h-0 whitespace-nowrap rounded-lg px-2.5 text-[11px] font-semibold leading-none transition sm:text-xs ${
+                    className={`h-8 min-h-0 whitespace-nowrap rounded-lg px-2.5 text-[11px] font-semibold leading-none transition sm:text-xs ${
                       statusFilter === filter.id
                         ? 'bg-slate-900 text-white'
                         : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-100'
