@@ -1,11 +1,10 @@
-export const DEFAULT_MAX_DISTANCE = 25;
+export const DEFAULT_MAX_DISTANCE = 10;
 export const RECENT_SEARCHES_KEY = 'skillvigo-search-recents-v1';
 
 export const DELIVERY_OPTIONS = [
-  { id: 'all', label: 'All', description: 'Browse every listing type.' },
-  { id: 'online', label: 'Online', description: 'Remote sessions from anywhere.' },
-  { id: 'offline', label: 'Offline', description: 'Nearby in-person sessions.' },
-  { id: 'hybrid', label: 'Hybrid', description: 'A mix of online and offline.' },
+  { id: 'offline', label: 'Nearby', description: 'In-person sessions within your 10 km radius.' },
+  { id: 'hybrid', label: 'Hybrid nearby', description: 'Listings that include in-person availability nearby.' },
+  { id: 'all', label: 'All nearby', description: 'All nearby listings that support in-person sessions.' },
 ];
 
 export const SORT_OPTIONS = [

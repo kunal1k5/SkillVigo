@@ -1,10 +1,16 @@
 import mongoose from 'mongoose';
 import Booking from '../models/Booking.js';
 import Skill from '../models/Skill.js';
+import User from '../models/User.js';
 import { readDatabase } from '../data/dataStore.js';
+import {
+  getDistanceBetweenCoordinates,
+  normalizeLocationCoordinates,
+} from '../utils/location.js';
 
 const DEFAULT_CURRENCY = 'INR';
 const DEFAULT_SESSION_DURATION = 60;
+const DEFAULT_NEARBY_DISTANCE_KM = 10;
 const ACCENT_PALETTE = [
   'linear-gradient(135deg, #0f172a 0%, #2563eb 100%)',
   'linear-gradient(135deg, #065f46 0%, #22c55e 100%)',
@@ -100,6 +106,67 @@ function getModeGroup(modeValue = '') {
   return 'offline';
 }
 
+function normalizeModeFilter(modeValue = '') {
+  const normalizedMode = normalizeString(modeValue).toLowerCase();
+
+  if (!normalizedMode) {
+    return '';
+  }
+
+  if (normalizedMode === 'local') {
+    return 'offline';
+  }
+
+  return normalizedMode;
+}
+
+function isOnlineOnlyMode(modeValue = '') {
+  const normalizedMode = `${modeValue || ''}`.toLowerCase();
+  return getModeGroup(normalizedMode) === 'online' && !normalizedMode.includes('hybrid');
+}
+
+function resolveSkillCoordinates(skill = {}) {
+  const skillCoordinates = normalizeLocationCoordinates({
+    locationCoordinates: skill.locationCoordinates,
+  });
+
+  if (skillCoordinates) {
+    return skillCoordinates;
+  }
+
+  if (skill.userId && typeof skill.userId === 'object') {
+    return normalizeLocationCoordinates({
+      locationCoordinates: skill.userId.locationCoordinates,
+    });
+  }
+
+  return null;
+}
+
+function resolveViewerCoordinates(req) {
+  const coordinatesFromQuery = normalizeLocationCoordinates(req.query || {});
+
+  if (coordinatesFromQuery) {
+    return coordinatesFromQuery;
+  }
+
+  return normalizeLocationCoordinates({
+    locationCoordinates: req.user?.locationCoordinates,
+  });
+}
+
+function resolveSkillCoordinatesFromRequest(req) {
+  const coordinatesFromPayload = normalizeLocationCoordinates(req.body || {});
+
+  if (coordinatesFromPayload) {
+    return coordinatesFromPayload;
+  }
+
+  return normalizeLocationCoordinates({
+    locationCoordinates: req.user?.locationCoordinates,
+  });
+}
+
 function pickAccent(skill) {
   const stableValue = createStableNumberFromString(
     `${skill.category || ''}:${skill.title || ''}:${normalizeObjectIdString(skill._id)}`,
@@ -158,32 +225,28 @@ function buildAvailability(skill, metrics) {
   return 'Schedule on request';
 }
 
-function buildDistanceKm(skill, currentUser) {
-  if (getModeGroup(skill.mode) === 'online' && !String(skill.mode || '').toLowerCase().includes('hybrid')) {
+function buildDistanceKm(skill, viewerCoordinates) {
+  if (isOnlineOnlyMode(skill.mode)) {
     return null;
   }
 
-  const radiusKm = parseRadiusKm(skill.serviceRadius) || 10;
-  const stableOffset =
-    (createStableNumberFromString(
-      `${normalizeObjectIdString(skill._id)}:${skill.location || ''}`,
-    ) %
-      40) /
-    10;
-  let distanceKm = Number(Math.max(0.8, Math.min(radiusKm, radiusKm * 0.42 + stableOffset)).toFixed(1));
-
-  const viewerLocation = normalizeString(currentUser?.location).toLowerCase();
-  const skillLocation = normalizeString(skill.location).toLowerCase();
-
-  if (
-    viewerLocation &&
-    skillLocation &&
-    (viewerLocation.includes(skillLocation) || skillLocation.includes(viewerLocation))
-  ) {
-    distanceKm = Number(Math.min(distanceKm, 2.4).toFixed(1));
+  if (!viewerCoordinates) {
+    return null;
   }
 
-  return distanceKm;
+  const skillCoordinates = resolveSkillCoordinates(skill);
+
+  if (!skillCoordinates) {
+    return null;
+  }
+
+  const distanceKm = getDistanceBetweenCoordinates(viewerCoordinates, skillCoordinates);
+
+  if (!Number.isFinite(distanceKm)) {
+    return null;
+  }
+
+  return Number(distanceKm.toFixed(1));
 }
 
 function buildDistanceLabel(distanceKm, modeGroup) {
@@ -191,7 +254,7 @@ function buildDistanceLabel(distanceKm, modeGroup) {
     return `${distanceKm.toFixed(1)} km away`;
   }
 
-  return modeGroup === 'online' ? 'Remote friendly' : 'Nearby service';
+  return modeGroup === 'online' ? 'Remote friendly' : 'Distance unavailable';
 }
 
 function buildProviderPayload(skill) {
@@ -201,6 +264,9 @@ function buildProviderPayload(skill) {
       name: skill.userId.name,
       role: skill.userId.role || 'provider',
       location: skill.userId.location || '',
+      locationCoordinates: normalizeLocationCoordinates({
+        locationCoordinates: skill.userId.locationCoordinates,
+      }),
       avatarUrl: skill.userId.avatarUrl || '',
     };
   }
@@ -226,6 +292,7 @@ function buildFallbackRating(skill, metrics) {
 function buildSkillResponse(skill, options = {}) {
   const {
     currentUser = null,
+    viewerCoordinates = null,
     metrics = {},
   } = options;
 
@@ -238,10 +305,11 @@ function buildSkillResponse(skill, options = {}) {
     metrics.reviewCount > 0
       ? Number(Number(metrics.rating || 0).toFixed(1))
       : buildFallbackRating(skill, metrics);
-  const distanceKm = buildDistanceKm(skill, currentUser);
+  const distanceKm = buildDistanceKm(skill, viewerCoordinates);
   const distanceLabel = buildDistanceLabel(distanceKm, modeGroup);
   const viewerRole = currentUser?.role || 'guest';
   const canHire = viewerRole !== 'provider' && !isOwnListing;
+  const serviceRadiusKm = parseRadiusKm(skill.serviceRadius);
 
   return {
     id: skillId,
@@ -260,6 +328,7 @@ function buildSkillResponse(skill, options = {}) {
     area: skill.location,
     availability: buildAvailability(skill, metrics),
     serviceRadius: skill.serviceRadius,
+    serviceRadiusKm,
     tags: Array.isArray(skill.tags) ? skill.tags : [],
     outcomes: buildDefaultOutcomes(skill),
     createdAt: skill.createdAt,
@@ -331,7 +400,7 @@ function validateUpdatePayload({ title, description, category, price, experience
 
 const buildPopulateOptions = () => ({
   path: 'userId',
-  select: 'name location avatarUrl role',
+  select: 'name location locationCoordinates avatarUrl role',
 });
 
 async function buildMetricsBySkill(skills = []) {
@@ -392,11 +461,14 @@ function applySkillFilters(skills, req) {
   const queryText = normalizeString(req.query?.q || req.query?.query).toLowerCase();
   const category = normalizeString(req.query?.category).toLowerCase();
   const level = normalizeString(req.query?.level).toLowerCase();
-  const mode = normalizeString(req.query?.mode).toLowerCase();
+  const requestedMode = normalizeModeFilter(req.query?.mode);
+  const mode = requestedMode || 'all';
   const location = normalizeString(req.query?.location).toLowerCase();
   const minPrice = normalizeNumber(req.query?.minPrice ?? req.query?.priceMin);
   const maxPrice = normalizeNumber(req.query?.maxPrice ?? req.query?.priceMax);
-  const maxDistance = normalizeNumber(req.query?.maxDistance ?? req.query?.distanceKm);
+  const requestedMaxDistance = normalizeNumber(req.query?.maxDistance ?? req.query?.distanceKm);
+  const maxDistance = requestedMaxDistance !== null ? requestedMaxDistance : DEFAULT_NEARBY_DISTANCE_KM;
+  const shouldApplyDistanceFilter = mode !== 'online';
   const onlyBookable = parseBooleanQuery(req.query?.onlyBookable);
   const onlyMine = parseBooleanQuery(req.query?.mine);
   const includeOwn = parseBooleanQuery(req.query?.includeOwn);
@@ -436,7 +508,7 @@ function applySkillFilters(skills, req) {
       return false;
     }
 
-    if (mode) {
+    if (mode && mode !== 'all') {
       const modeGroup = getModeGroup(skill.mode);
       if (modeGroup !== mode && String(skill.mode || '').toLowerCase() !== mode) {
         return false;
@@ -451,8 +523,15 @@ function applySkillFilters(skills, req) {
       return false;
     }
 
-    if (maxDistance !== null && typeof skill.distanceKm === 'number' && skill.distanceKm > maxDistance) {
-      return false;
+    if (shouldApplyDistanceFilter && maxDistance !== null) {
+      const effectiveMaxDistance =
+        typeof skill.serviceRadiusKm === 'number'
+          ? Math.min(maxDistance, skill.serviceRadiusKm)
+          : maxDistance;
+
+      if (typeof skill.distanceKm !== 'number' || skill.distanceKm > effectiveMaxDistance) {
+        return false;
+      }
     }
 
     if (onlyBookable && !skill.canBook) {
@@ -495,11 +574,11 @@ function sortSkills(skills, req) {
         const firstScore =
           first.rating * 10 +
           first.learnersHelped * 0.08 -
-          (typeof first.distanceKm === 'number' ? first.distanceKm : 3);
+          (typeof first.distanceKm === 'number' ? first.distanceKm : DEFAULT_NEARBY_DISTANCE_KM * 3);
         const secondScore =
           second.rating * 10 +
           second.learnersHelped * 0.08 -
-          (typeof second.distanceKm === 'number' ? second.distanceKm : 3);
+          (typeof second.distanceKm === 'number' ? second.distanceKm : DEFAULT_NEARBY_DISTANCE_KM * 3);
 
         return secondScore - firstScore;
       });
@@ -508,6 +587,7 @@ function sortSkills(skills, req) {
 
 async function listSkills(req, res, next) {
   try {
+    const viewerCoordinates = resolveViewerCoordinates(req);
     const skills = await Skill.find()
       .populate(buildPopulateOptions())
       .sort({ createdAt: -1 });
@@ -515,6 +595,7 @@ async function listSkills(req, res, next) {
     const skillPayloads = skills.map((skill) =>
       buildSkillResponse(skill, {
         currentUser: req.user || null,
+        viewerCoordinates,
         metrics: metricsBySkill.get(normalizeObjectIdString(skill._id)) || {},
       }),
     );
@@ -530,6 +611,8 @@ async function listSkills(req, res, next) {
       viewer: {
         isAuthenticated: Boolean(req.user),
         role: req.user?.role || 'guest',
+        hasLocationCoordinates: Boolean(viewerCoordinates),
+        defaultDistanceKm: DEFAULT_NEARBY_DISTANCE_KM,
         canCreateSkill: req.user?.role === 'provider' || req.user?.role === 'admin',
         canBookSkills: req.user?.role !== 'provider',
       },
@@ -554,6 +637,7 @@ export const createSkill = async (req, res, next) => {
       availability: normalizeString(req.body?.availability),
       serviceRadius: normalizeString(req.body?.serviceRadius) || '10 km',
       tags: normalizeStringArray(req.body?.tags),
+      locationCoordinates: resolveSkillCoordinatesFromRequest(req),
     };
 
     const validationError = validateCreatePayload(payload);
@@ -564,10 +648,27 @@ export const createSkill = async (req, res, next) => {
       });
     }
 
-    const skill = await Skill.create({
+    const currentUserCoordinates = normalizeLocationCoordinates({
+      locationCoordinates: req.user?.locationCoordinates,
+    });
+
+    if (payload.locationCoordinates && !currentUserCoordinates) {
+      await User.findByIdAndUpdate(req.user.id, {
+        locationCoordinates: payload.locationCoordinates,
+      });
+      req.user.locationCoordinates = payload.locationCoordinates;
+    }
+
+    const createPayload = {
       userId: req.user.id,
       ...payload,
-    });
+    };
+
+    if (!payload.locationCoordinates) {
+      delete createPayload.locationCoordinates;
+    }
+
+    const skill = await Skill.create(createPayload);
 
     const populatedSkill = await Skill.findById(skill._id).populate(buildPopulateOptions());
     const metricsBySkill = await buildMetricsBySkill([populatedSkill]);
@@ -577,6 +678,9 @@ export const createSkill = async (req, res, next) => {
       message: 'Skill created successfully.',
       skill: buildSkillResponse(populatedSkill, {
         currentUser: req.user,
+        viewerCoordinates: normalizeLocationCoordinates({
+          locationCoordinates: req.user?.locationCoordinates,
+        }),
         metrics: metricsBySkill.get(normalizeObjectIdString(populatedSkill._id)) || {},
       }),
     });
@@ -608,11 +712,13 @@ export const getSkillById = async (req, res, next) => {
     }
 
     const metricsBySkill = await buildMetricsBySkill([skill]);
+    const viewerCoordinates = resolveViewerCoordinates(req);
 
     return res.status(200).json({
       success: true,
       skill: buildSkillResponse(skill, {
         currentUser: req.user || null,
+        viewerCoordinates,
         metrics: metricsBySkill.get(normalizeObjectIdString(skill._id)) || {},
       }),
     });
@@ -650,6 +756,14 @@ export const updateSkill = async (req, res, next) => {
     }
 
     const updates = {};
+    const hasLocationCoordinatePayload =
+      req.body?.locationCoordinates !== undefined ||
+      req.body?.latitude !== undefined ||
+      req.body?.lat !== undefined ||
+      req.body?.longitude !== undefined ||
+      req.body?.lng !== undefined ||
+      req.body?.lon !== undefined;
+    const nextLocationCoordinates = normalizeLocationCoordinates(req.body || {});
     const normalizedFields = {
       title: req.body?.title !== undefined ? normalizeString(req.body.title) : undefined,
       description:
@@ -691,6 +805,13 @@ export const updateSkill = async (req, res, next) => {
       }
     });
 
+    if (hasLocationCoordinatePayload) {
+      updates.locationCoordinates = nextLocationCoordinates || undefined;
+    } else if (normalizedFields.location !== undefined) {
+      // Keep location text and coordinates aligned. If location text changed without coordinates, reset stale coordinates.
+      updates.locationCoordinates = undefined;
+    }
+
     Object.assign(skill, updates);
     await skill.save();
 
@@ -702,6 +823,9 @@ export const updateSkill = async (req, res, next) => {
       message: 'Skill updated successfully.',
       skill: buildSkillResponse(updatedSkill, {
         currentUser: req.user,
+        viewerCoordinates: normalizeLocationCoordinates({
+          locationCoordinates: req.user?.locationCoordinates,
+        }),
         metrics: metricsBySkill.get(normalizeObjectIdString(updatedSkill._id)) || {},
       }),
     });

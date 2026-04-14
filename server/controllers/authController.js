@@ -8,6 +8,7 @@ import {
 } from '../utils/email.js';
 import { generateToken, sanitizeUser } from '../utils/auth.js';
 import { isSmsConfigured, sendVerificationOtpSms } from '../utils/sms.js';
+import { normalizeLocationCoordinates } from '../utils/location.js';
 import {
   buildOtpExpiryDate,
   createOtpCode,
@@ -251,6 +252,7 @@ export const registerUser = async (req, res, next) => {
     const normalizedRole = normalizeString(role).toLowerCase() || 'seeker';
     const normalizedPhone = normalizePhone(phone);
     const normalizedLocation = normalizeString(location);
+    const normalizedLocationCoordinates = normalizeLocationCoordinates(req.body || {});
 
     if (!normalizedName || !normalizedEmail || !normalizedPassword.trim() || !normalizedPhone) {
       return res.status(400).json({
@@ -308,6 +310,7 @@ export const registerUser = async (req, res, next) => {
       role: normalizedRole,
       phone: normalizedPhone,
       location: normalizedLocation,
+      locationCoordinates: normalizedLocationCoordinates || undefined,
       emailVerified: false,
       phoneVerified: !shouldVerifyPhone,
     });

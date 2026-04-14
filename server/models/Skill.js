@@ -46,6 +46,18 @@ const skillSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  locationCoordinates: {
+    latitude: {
+      type: Number,
+      min: -90,
+      max: 90,
+    },
+    longitude: {
+      type: Number,
+      min: -180,
+      max: 180,
+    },
+  },
   availability: {
     type: String,
     trim: true,

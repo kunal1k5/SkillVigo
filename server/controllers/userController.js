@@ -6,6 +6,7 @@ import Skill from '../models/Skill.js';
 import { sanitizeUser } from '../utils/auth.js';
 import {
   buildLocationLabel,
+  normalizeLocationCoordinates,
   normalizeLocationFields,
 } from '../utils/location.js';
 import {
@@ -264,6 +265,14 @@ export async function updateUserProfile(req, res, next) {
     ];
     const locationFieldNames = ['country', 'state', 'city', 'fullAddress'];
     const nextLocationFields = normalizeLocationFields(currentUser);
+    const hasLocationCoordinatePayload =
+      req.body?.locationCoordinates !== undefined ||
+      req.body?.latitude !== undefined ||
+      req.body?.lat !== undefined ||
+      req.body?.longitude !== undefined ||
+      req.body?.lng !== undefined ||
+      req.body?.lon !== undefined;
+    const nextLocationCoordinates = normalizeLocationCoordinates(req.body || {});
     const updates = {};
     let shouldRebuildLocation = false;
 
@@ -309,8 +318,16 @@ export async function updateUserProfile(req, res, next) {
       }
     }
 
+    if (hasLocationCoordinatePayload) {
+      updates.locationCoordinates = nextLocationCoordinates || undefined;
+    }
+
     if (shouldRebuildLocation) {
       updates.location = buildLocationLabel(nextLocationFields);
+
+      if (!hasLocationCoordinatePayload) {
+        updates.locationCoordinates = undefined;
+      }
     }
 
     const user = await User.findByIdAndUpdate(targetUserId, updates, {

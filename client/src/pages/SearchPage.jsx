@@ -14,7 +14,7 @@ import {
   sortSkills,
   writeRecentSearches,
 } from '../components/search/searchHelpers';
-import { SAMPLE_SKILLS, SKILL_CATEGORIES, SUGGESTED_SKILL_NAMES } from '../components/skill/skillCatalog';
+import { SKILL_CATEGORIES, SUGGESTED_SKILL_NAMES } from '../components/skill/skillCatalog';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
@@ -22,6 +22,22 @@ import useAuth from '../hooks/useAuth';
 import { createBooking } from '../services/bookingService';
 import { createOrOpenConversation } from '../services/chatService';
 import { getAllSkills } from '../services/skillService';
+
+const DEFAULT_MODE_FILTER = 'offline';
+
+function getCoordinatesFromUser(user) {
+  const latitude = Number(user?.locationCoordinates?.latitude);
+  const longitude = Number(user?.locationCoordinates?.longitude);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+  };
+}
 
 function FilterIcon({ className = 'h-5 w-5' }) {
   return (
@@ -141,14 +157,17 @@ function NoResultsState({ onReset }) {
 export default function SearchPage() {
   const navigate = useNavigate();
   const { currentUser, isAuthenticated } = useAuth();
+  const userCoordinates = useMemo(() => getCoordinatesFromUser(currentUser), [currentUser]);
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedMode, setSelectedMode] = useState('all');
+  const [selectedMode, setSelectedMode] = useState(DEFAULT_MODE_FILTER);
   const [maxDistance, setMaxDistance] = useState(DEFAULT_MAX_DISTANCE);
+  const [viewerCoordinates, setViewerCoordinates] = useState(() => getCoordinatesFromUser(currentUser));
+  const [locationAttempted, setLocationAttempted] = useState(Boolean(getCoordinatesFromUser(currentUser)));
   const [sortOption, setSortOption] = useState('recommended');
   const [selectedSkillId, setSelectedSkillId] = useState('');
   const [recentSearches, setRecentSearches] = useState(() => readRecentSearches());
@@ -193,13 +212,81 @@ export default function SearchPage() {
   }, [isFilterDrawerOpen]);
 
   useEffect(() => {
+    if (!userCoordinates) {
+      return;
+    }
+
+    setViewerCoordinates(userCoordinates);
+    setLocationAttempted(true);
+  }, [userCoordinates]);
+
+  useEffect(() => {
+    if (userCoordinates || viewerCoordinates || locationAttempted) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window.navigator?.geolocation) {
+      setLocationAttempted(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    window.navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (cancelled) {
+          return;
+        }
+
+        setViewerCoordinates({
+          latitude: Number(position.coords.latitude),
+          longitude: Number(position.coords.longitude),
+        });
+        setLocationAttempted(true);
+      },
+      () => {
+        if (cancelled) {
+          return;
+        }
+
+        setLocationAttempted(true);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 1000 * 60 * 10,
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locationAttempted, userCoordinates, viewerCoordinates]);
+
+  useEffect(() => {
     let active = true;
+
+    if (!viewerCoordinates && !locationAttempted) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const requestParams = {
+      mode: 'all',
+      maxDistance: DEFAULT_MAX_DISTANCE,
+    };
+
+    if (viewerCoordinates) {
+      requestParams.latitude = viewerCoordinates.latitude;
+      requestParams.longitude = viewerCoordinates.longitude;
+    }
 
     const loadSkills = async () => {
       setLoading(true);
 
       try {
-        const response = await getAllSkills();
+        const response = await getAllSkills(requestParams);
 
         if (!active) {
           return;
@@ -210,12 +297,19 @@ export default function SearchPage() {
         if (liveSkills.length) {
           setSkills(liveSkills.map(normalizeSkill));
           setFetchAlert(null);
+        } else if (!viewerCoordinates) {
+          setSkills([]);
+          setFetchAlert({
+            tone: 'warning',
+            title: 'Location is needed for nearby results',
+            description: 'Allow location access (or add it in your profile) to see skills within 10 km around you.',
+          });
         } else {
-          setSkills(SAMPLE_SKILLS.map(normalizeSkill));
+          setSkills([]);
           setFetchAlert({
             tone: 'info',
-            title: 'Marketplace is warming up',
-            description: 'No live skills are published yet, so you are seeing curated sample listings for now.',
+            title: 'No nearby listings right now',
+            description: 'We could not find live skills within 10 km at the moment. Try again in a bit.',
           });
         }
       } catch {
@@ -223,11 +317,11 @@ export default function SearchPage() {
           return;
         }
 
-        setSkills(SAMPLE_SKILLS.map(normalizeSkill));
+        setSkills([]);
         setFetchAlert({
-          tone: 'warning',
+          tone: 'error',
           title: 'Live search is temporarily unavailable',
-          description: 'Showing curated sample listings so you can continue exploring while the service reconnects.',
+          description: 'We could not load nearby live listings from the server right now.',
         });
       } finally {
         if (active) {
@@ -241,13 +335,16 @@ export default function SearchPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locationAttempted, viewerCoordinates]);
 
   const filteredSkills = useMemo(() => {
     const matchingSkills = skills.filter((skill) => {
       const matchesCategory = selectedCategory === 'all' || skill.category === selectedCategory;
       const matchesMode = selectedMode === 'all' || skill.modeGroup === selectedMode;
-      const matchesDistance = typeof skill.distanceKm === 'number' ? skill.distanceKm <= maxDistance : true;
+      const matchesDistance =
+        selectedMode === 'online'
+          ? true
+          : typeof skill.distanceKm === 'number' && skill.distanceKm <= maxDistance;
       const matchesSearch = deferredSearchTerm
         ? buildSearchHaystack(skill).includes(deferredSearchTerm)
         : true;
@@ -283,13 +380,15 @@ export default function SearchPage() {
     : 'grid grid-cols-1 gap-5';
 
   const stats = useMemo(() => {
-    const nearbyCount = skills.filter((skill) => typeof skill.distanceKm === 'number' && skill.distanceKm <= 10).length;
+    const nearbyCount = skills.filter(
+      (skill) => typeof skill.distanceKm === 'number' && skill.distanceKm <= DEFAULT_MAX_DISTANCE,
+    ).length;
     const averageRating = skills.length
       ? (skills.reduce((sum, skill) => sum + skill.rating, 0) / skills.length).toFixed(1)
       : '0.0';
 
     return [
-      { label: 'Live listings', value: skills.length || SAMPLE_SKILLS.length },
+      { label: 'Live listings', value: skills.length },
       { label: 'Nearby options', value: nearbyCount },
       { label: 'Avg. rating', value: averageRating },
       { label: 'Categories', value: SKILL_CATEGORIES.length },
@@ -315,11 +414,11 @@ export default function SearchPage() {
       });
     }
 
-    if (selectedMode !== 'all') {
+    if (selectedMode !== DEFAULT_MODE_FILTER) {
       chips.push({
         key: 'mode',
         label: `${selectedMode.charAt(0).toUpperCase()}${selectedMode.slice(1)}`,
-        onRemove: () => startTransition(() => setSelectedMode('all')),
+        onRemove: () => startTransition(() => setSelectedMode(DEFAULT_MODE_FILTER)),
       });
     }
 
@@ -360,7 +459,7 @@ export default function SearchPage() {
   const resetFilters = () => {
     startTransition(() => {
       setSelectedCategory('all');
-      setSelectedMode('all');
+      setSelectedMode(DEFAULT_MODE_FILTER);
       setMaxDistance(DEFAULT_MAX_DISTANCE);
       setSortOption('recommended');
     });
@@ -374,27 +473,44 @@ export default function SearchPage() {
   const reloadSkills = async () => {
     setIsRefreshing(true);
 
+    const requestParams = {
+      mode: 'all',
+      maxDistance: DEFAULT_MAX_DISTANCE,
+    };
+
+    if (viewerCoordinates) {
+      requestParams.latitude = viewerCoordinates.latitude;
+      requestParams.longitude = viewerCoordinates.longitude;
+    }
+
     try {
-      const response = await getAllSkills();
+      const response = await getAllSkills(requestParams);
       const liveSkills = Array.isArray(response) ? response : [];
 
       if (liveSkills.length) {
         setSkills(liveSkills.map(normalizeSkill));
         setFetchAlert(null);
+      } else if (!viewerCoordinates) {
+        setSkills([]);
+        setFetchAlert({
+          tone: 'warning',
+          title: 'Location is needed for nearby results',
+          description: 'Allow location access (or add it in your profile) to see skills within 10 km around you.',
+        });
       } else {
-        setSkills(SAMPLE_SKILLS.map(normalizeSkill));
+        setSkills([]);
         setFetchAlert({
           tone: 'info',
-          title: 'Marketplace is warming up',
-          description: 'There are still no live listings yet, so the sample marketplace remains visible.',
+          title: 'No nearby listings right now',
+          description: 'We could not find live skills within 10 km at the moment. Try again in a bit.',
         });
       }
     } catch {
-      setSkills(SAMPLE_SKILLS.map(normalizeSkill));
+      setSkills([]);
       setFetchAlert({
-        tone: 'warning',
+        tone: 'error',
         title: 'Still offline',
-        description: 'We could not refresh live results yet. Sample listings are still available below.',
+        description: 'We could not refresh nearby live results from the server.',
       });
     } finally {
       setIsRefreshing(false);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SkillCard from '../components/skill/SkillCard';
 import SkillForm from '../components/skill/SkillForm';
@@ -6,6 +6,7 @@ import { SKILL_CATEGORIES, SUGGESTED_SKILL_NAMES } from '../components/skill/ski
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
+import useAuth from '../hooks/useAuth';
 import { createSkill } from '../services/skillService';
 
 function normalizeText(value) {
@@ -23,8 +24,8 @@ function normalizeTags(rawTags) {
     .filter(Boolean);
 }
 
-function buildSkillPayload(skillData = {}) {
-  return {
+function buildSkillPayload(skillData = {}, currentUser = null, fallbackCoordinates = null) {
+  const payload = {
     title: normalizeText(skillData.title),
     description: normalizeText(skillData.description),
     category: normalizeText(skillData.category),
@@ -38,6 +39,22 @@ function buildSkillPayload(skillData = {}) {
     tags: normalizeTags(skillData.tags),
     imageFileName: normalizeText(skillData.imageFileName),
   };
+
+  const latitude = Number(
+    currentUser?.locationCoordinates?.latitude ?? fallbackCoordinates?.latitude,
+  );
+  const longitude = Number(
+    currentUser?.locationCoordinates?.longitude ?? fallbackCoordinates?.longitude,
+  );
+
+  if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    payload.locationCoordinates = {
+      latitude,
+      longitude,
+    };
+  }
+
+  return payload;
 }
 
 function validateSkillPayload(payload) {
@@ -87,15 +104,52 @@ function buildPreviewSkill(draftSkill) {
 }
 
 export default function CreateSkill() {
+  const { currentUser } = useAuth();
+  const [deviceCoordinates, setDeviceCoordinates] = useState(null);
   const [draftSkill, setDraftSkill] = useState({});
   const [savedSkill, setSavedSkill] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  useEffect(() => {
+    if (currentUser?.locationCoordinates) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window.navigator?.geolocation) {
+      return;
+    }
+
+    let cancelled = false;
+
+    window.navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (cancelled) {
+          return;
+        }
+
+        setDeviceCoordinates({
+          latitude: Number(position.coords.latitude),
+          longitude: Number(position.coords.longitude),
+        });
+      },
+      () => {},
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 1000 * 60 * 10,
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.locationCoordinates]);
+
   const previewSkill = buildPreviewSkill(draftSkill);
 
   const handleSubmit = async (skillData) => {
-    const payload = buildSkillPayload(skillData);
+    const payload = buildSkillPayload(skillData, currentUser, deviceCoordinates);
     const validationError = validateSkillPayload(payload);
 
     if (validationError) {

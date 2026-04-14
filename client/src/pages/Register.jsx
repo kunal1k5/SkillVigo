@@ -277,6 +277,8 @@ export default function RegisterPage() {
     state: '',
     city: '',
     fullAddress: '',
+    latitude: '',
+    longitude: '',
     role: 'seeker',
     primarySkill: '',
   });
@@ -306,6 +308,8 @@ export default function RegisterPage() {
           country: value,
           state: '',
           city: '',
+          latitude: '',
+          longitude: '',
         };
       }
 
@@ -314,12 +318,22 @@ export default function RegisterPage() {
           ...currentData,
           state: value,
           city: '',
+          latitude: '',
+          longitude: '',
         };
       }
+
+      const shouldClearCoordinates = ['city', 'fullAddress'].includes(name);
 
       return {
         ...currentData,
         [name]: value,
+        ...(shouldClearCoordinates
+          ? {
+              latitude: '',
+              longitude: '',
+            }
+          : {}),
       };
     });
   };
@@ -362,6 +376,8 @@ export default function RegisterPage() {
         state: resolvedAddress.state || currentData.state,
         city: resolvedAddress.city || currentData.city,
         fullAddress: resolvedAddress.fullAddress || currentData.fullAddress,
+        latitude: Number(position.coords.latitude).toFixed(6),
+        longitude: Number(position.coords.longitude).toFixed(6),
       }));
       setLocationHint('Location filled from your device. You can still adjust any field manually.');
     } catch (requestError) {
@@ -408,16 +424,27 @@ export default function RegisterPage() {
     try {
       const resolvedLocation =
         formData.fullAddress.trim() || buildLocationLabel(formData) || '';
+      const parsedLatitude = Number(formData.latitude);
+      const parsedLongitude = Number(formData.longitude);
+      const hasCoordinates = Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude);
+      const registrationPayload = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        phone: formData.phone,
+        location: resolvedLocation,
+      };
+
+      if (hasCoordinates) {
+        registrationPayload.locationCoordinates = {
+          latitude: parsedLatitude,
+          longitude: parsedLongitude,
+        };
+      }
 
       const response = await register(
-        {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          phone: formData.phone,
-          location: resolvedLocation,
-        },
+        registrationPayload,
         {
           redirectTo: getDefaultRouteForRole(formData.role),
           source: 'register',

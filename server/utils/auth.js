@@ -34,6 +34,14 @@ export function sanitizeUser(user) {
     isVerified: isUserFullyVerified(user),
     verification: getVerificationSummary(user),
     location: user.location || '',
+    locationCoordinates:
+      user.locationCoordinates?.latitude !== undefined &&
+      user.locationCoordinates?.longitude !== undefined
+        ? {
+            latitude: Number(user.locationCoordinates.latitude),
+            longitude: Number(user.locationCoordinates.longitude),
+          }
+        : null,
     country: user.country || '',
     state: user.state || '',
     city: user.city || '',

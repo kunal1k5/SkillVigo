@@ -215,8 +215,8 @@ export default function FilterSidebar({
 
           <input
             type="range"
-            min="3"
-            max="25"
+            min="1"
+            max="10"
             step="1"
             value={maxDistance}
             onChange={(event) => onDistanceChange(Number(event.target.value))}
@@ -224,9 +224,9 @@ export default function FilterSidebar({
           />
 
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
-            <span>3 km</span>
-            <span>15 km</span>
-            <span>25 km</span>
+            <span>1 km</span>
+            <span>5 km</span>
+            <span>10 km</span>
           </div>
         </section>
       </div>
