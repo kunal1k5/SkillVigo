@@ -14,7 +14,7 @@ export default function BookingEmptyState({ onReset }) {
         <button
           type="button"
           onClick={onReset}
-          className="rounded-lg border border-slate-900 bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white shadow-[0_8px_16px_rgba(15,23,42,0.08)] transition hover:bg-black sm:text-xs"
+          className="inline-flex h-8 min-h-0 items-center justify-center whitespace-nowrap rounded-lg border border-slate-900 bg-slate-900 px-3 text-[11px] font-semibold text-white shadow-[0_8px_16px_rgba(15,23,42,0.08)] transition hover:bg-black sm:text-xs"
         >
           Reset filters
         </button>
