@@ -108,12 +108,22 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 pt-2">
           {isOwnProfile ? (
-            <Link
-              to="/profile/edit"
-              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
-            >
-              Edit Profile & Settings
-            </Link>
+            <>
+              <Link
+                to="/profile/edit"
+                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+              >
+                Edit Profile & Settings
+              </Link>
+              {profile.role === 'provider' ? (
+                <Link
+                  to="/create-skill"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                >
+                  Create Skill
+                </Link>
+              ) : null}
+            </>
           ) : (
             <>
               {profile.role === 'provider' && (
@@ -896,7 +906,15 @@ export default function Profile() {
               ))}
               {profile.skills.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl">
-                  No skills listed yet.
+                  <p>No skills listed yet.</p>
+                  {isOwnProfile && profile.role === 'provider' ? (
+                    <Link
+                      to="/create-skill"
+                      className="mt-4 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      Create your first skill
+                    </Link>
+                  ) : null}
                 </div>
               )}
             </div>
