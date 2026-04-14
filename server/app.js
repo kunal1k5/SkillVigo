@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
@@ -15,10 +14,13 @@ import { isEmailConfigured } from './utils/email.js';
 import { isSmsConfigured } from './utils/sms.js';
 import { shouldExposeOtpInResponse } from './utils/verification.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Netlify function bundling may not preserve import.meta.url reliably.
+// Load env from process env first, then fall back to local server/.env when running locally.
+dotenv.config();
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
+  dotenv.config({ path: path.resolve(process.cwd(), 'server', '.env') });
+}
 
 const app = express();
 let initializationPromise = null;
