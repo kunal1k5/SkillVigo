@@ -4,7 +4,7 @@ export default function BookingStats({ stats }) {
       {stats.map((item) => (
         <article
           key={item.label}
-          className="grid gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm"
+          className="grid gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-3.5 shadow-sm"
           style={{ borderTop: `3px solid ${item.accent || '#0f172a'}` }}
         >
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">

@@ -260,7 +260,7 @@ function StatusBanner({
   };
 
   return (
-    <div className={`rounded-xl border p-3.5 shadow-sm ${toneStyles[tone] || toneStyles.info}`}>
+    <div className={`rounded-md border p-3 shadow-sm ${toneStyles[tone] || toneStyles.info}`}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm font-semibold">{title}</p>
@@ -272,7 +272,7 @@ function StatusBanner({
             type="button"
             onClick={onAction}
             disabled={busy}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <RefreshCw className="h-4 w-4" />
             {busy ? 'Refreshing...' : actionLabel}
@@ -288,7 +288,7 @@ function AuthPrompt() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
       <PageContainer className="flex flex-1 items-center justify-center py-8">
-        <div className="max-w-xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-7">
+        <div className="max-w-xl rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-7">
           <h1 className="flex items-center justify-center gap-2.5 text-xl font-bold text-slate-900 sm:text-2xl">
             <Calendar className="h-7 w-7 text-slate-900" /> Sign in to open booking workspace
           </h1>
@@ -298,13 +298,13 @@ function AuthPrompt() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               to="/login"
-              className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
+              className="rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
             >
               Go to login
             </Link>
             <Link
               to="/register"
-              className="rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
               Create account
             </Link>
@@ -317,16 +317,16 @@ function AuthPrompt() {
 
 function EmptyBookingsState({ roleMeta }) {
   return (
-    <section className="grid min-h-[200px] content-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <span className="w-fit rounded-full border border-slate-300 bg-slate-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
+    <section className="grid min-h-[180px] content-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <span className="w-fit rounded-sm border border-slate-300 bg-slate-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
         Booking list is empty
       </span>
-      <h2 className="text-[clamp(1.2rem,2.6vw,1.65rem)] font-semibold text-slate-900">{roleMeta.emptyTitle}</h2>
+      <h2 className="text-[clamp(1.05rem,2.2vw,1.4rem)] font-semibold text-slate-900">{roleMeta.emptyTitle}</h2>
       <p className="max-w-[58ch] text-[13px] leading-6 text-slate-600 sm:text-sm">{roleMeta.emptyDescription}</p>
       <div>
         <Link
           to="/search"
-          className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
+          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
         >
           Browse skills
         </Link>
@@ -586,19 +586,19 @@ export default function BookingsDashboard() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
 
-      <main className="flex-1 py-5 sm:py-6">
+      <main className="flex-1 py-4 sm:py-5">
         <PageContainer maxWidth={1220} className="space-y-4 sm:space-y-5">
-          <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:grid-cols-[minmax(0,1.2fr)_320px]">
-            <div className="grid gap-4">
+          <section className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4 lg:grid-cols-[minmax(0,1.2fr)_300px]">
+            <div className="grid gap-3">
               <div className="grid gap-2">
-                <span className="w-fit rounded-full border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
+                <span className="w-fit rounded-sm border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700">
                   Booking workspace
                 </span>
                 <div className="grid gap-2">
-                  <h1 className="text-[clamp(1.4rem,3.2vw,2.1rem)] font-semibold leading-tight text-slate-900">
+                  <h1 className="text-[clamp(1.05rem,2.2vw,1.55rem)] font-semibold leading-tight text-slate-900">
                     {roleMeta.title}
                   </h1>
-                  <p className="max-w-[62ch] text-[13px] leading-6 text-slate-600 sm:text-sm">
+                  <p className="max-w-[62ch] text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
                     {roleMeta.description}
                   </p>
                 </div>
@@ -607,7 +607,7 @@ export default function BookingsDashboard() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/search"
-                  className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-black sm:text-sm"
+                  className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black sm:text-sm"
                 >
                   {roleMeta.primaryCta}
                 </Link>
@@ -615,7 +615,7 @@ export default function BookingsDashboard() {
                   type="button"
                   onClick={() => loadBookings({ silent: true })}
                   disabled={refreshing || loading}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
                 >
                   <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                   {refreshing ? 'Refreshing...' : 'Refresh bookings'}
@@ -623,7 +623,7 @@ export default function BookingsDashboard() {
               </div>
             </div>
 
-            <aside className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <aside className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3.5">
               <div className="grid gap-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Next session</span>
                 <strong className="text-base leading-6 text-slate-900 sm:text-lg">
@@ -634,7 +634,7 @@ export default function BookingsDashboard() {
                 </span>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+              <div className="rounded-md border border-slate-200 bg-white p-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Scheduled</p>
                 <p className="mt-1.5 text-sm font-semibold leading-6 text-slate-900">
                   {formatShortSchedule(nextBooking?.scheduledAt)}
@@ -645,11 +645,11 @@ export default function BookingsDashboard() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+                <div className="rounded-md border border-slate-200 bg-white p-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Active</p>
                   <p className="mt-1.5 text-xl font-semibold text-slate-900 sm:text-2xl">{activeBookingsCount}</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+                <div className="rounded-md border border-slate-200 bg-white p-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Needs action</p>
                   <p className="mt-1.5 text-xl font-semibold text-slate-900 sm:text-2xl">{needsActionCount}</p>
                 </div>
@@ -670,11 +670,11 @@ export default function BookingsDashboard() {
             />
           ) : null}
 
-          <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Session list</p>
-                <h2 className="mt-1.5 text-xl font-semibold text-slate-900 sm:text-2xl" id="booking-list">
+                <h2 className="mt-1 text-lg font-semibold text-slate-900 sm:text-xl" id="booking-list">
                   Track every session in one place
                 </h2>
               </div>
@@ -685,10 +685,10 @@ export default function BookingsDashboard() {
                     key={filter.id}
                     type="button"
                     onClick={() => setStatusFilter(filter.id)}
-                    className={`whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-semibold transition sm:text-sm ${
+                    className={`whitespace-nowrap rounded-sm px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
                       statusFilter === filter.id
                         ? 'bg-slate-900 text-white'
-                        : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                        : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     {filter.label}
@@ -706,7 +706,7 @@ export default function BookingsDashboard() {
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search by skill, person, note, or location"
-                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-900"
+                className="w-full rounded-md border border-slate-300 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-900"
               />
             </label>
 
