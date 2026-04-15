@@ -355,7 +355,7 @@ function MessageCenter({ conversations }) {
       <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
         <div className="border-b border-slate-100 px-5 py-4">
           <h2 className="text-lg flex items-center gap-2 font-bold text-slate-900">
-            <MessageSquare className="w-5 h-5 text-indigo-500" /> Recent Messages
+            <MessageSquare className="w-5 h-5 text-indigo-500" /> Your Conversations
           </h2>
           </div>
           <div className="divide-y divide-slate-100">
@@ -384,7 +384,7 @@ function MessageCenter({ conversations }) {
         </div>
         <div className="border-t border-slate-100 px-5 py-4">
           <Link to="/chat" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
-            Open full chat page
+          View All Chats
           </Link>
         </div>
       </div>
@@ -401,7 +401,7 @@ function MessageCenter({ conversations }) {
                 to="/chat"
                 className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
-                Reply in Chat
+              Continue Chat
               </Link>
             </div>
             <div className="space-y-4 bg-slate-50 p-6">
