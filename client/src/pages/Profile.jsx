@@ -121,7 +121,7 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
                   to="/create-skill"
                   className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
                 >
-                  Create Skill
+                  Add Skill
                 </Link>
               ) : null}
             </>
@@ -132,7 +132,7 @@ const ProfileHeader = ({ profile, isOwnProfile }) => {
                   to="/bookings"
                   className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
                 >
-                  Book Now
+                  Book Session
                 </Link>
               )}
               <Link
