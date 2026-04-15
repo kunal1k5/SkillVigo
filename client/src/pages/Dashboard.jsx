@@ -424,7 +424,7 @@ function MessageCenter({ conversations }) {
             </div>
           </>
         ) : (
-          <div className="p-8 text-slate-500">No messages yet.</div>
+          <div className="p-8 text-slate-500">Start a conversation to see messages here.</div>
         )}
       </div>
     </div>
