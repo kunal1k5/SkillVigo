@@ -112,11 +112,11 @@ const STUB_DATA = {
 };
 
 const NAV_ITEMS = {
-  dashboard: { label: 'Dashboard', icon: 'DB' },
-  skills: { label: 'My Skills', icon: 'SK' },
-  bookings: { label: 'Bookings', icon: 'BK' },
-  messages: { label: 'Messages', icon: 'MS' },
-  settings: { label: 'Settings', icon: 'ST' },
+  dashboard: { label: 'Home', icon: 'DB' },         
+  skills: { label: 'My Services', icon: 'SK' },    
+  bookings: { label: 'Appointments', icon: 'BK' }, 
+  messages: { label: 'Chats', icon: 'MS' },        
+  settings: { label: 'Account Settings', icon: 'ST' }, 
 };
 
 function getInitials(name = '') {
