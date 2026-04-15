@@ -529,7 +529,8 @@ function applySkillFilters(skills, req) {
           ? Math.min(maxDistance, skill.serviceRadiusKm)
           : maxDistance;
 
-      if (typeof skill.distanceKm !== 'number' || skill.distanceKm > effectiveMaxDistance) {
+      // Keep listings without computed coordinates visible instead of silently dropping them.
+      if (typeof skill.distanceKm === 'number' && skill.distanceKm > effectiveMaxDistance) {
         return false;
       }
     }

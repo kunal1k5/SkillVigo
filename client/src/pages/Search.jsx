@@ -82,7 +82,7 @@ export default function Search() {
     return skills.filter((skill) => {
       const matchesCategory = selectedCategory === 'all' || skill.category === selectedCategory;
       const matchesMode = selectedMode === 'all' || getModeGroup(skill.mode) === selectedMode;
-      const matchesRadius = !withinRadiusOnly || (typeof skill.distanceKm === 'number' && skill.distanceKm <= 10);
+      const matchesRadius = !withinRadiusOnly || typeof skill.distanceKm !== 'number' || skill.distanceKm <= 10;
 
       if (!matchesCategory || !matchesMode || !matchesRadius) {
         return false;
@@ -193,7 +193,7 @@ export default function Search() {
                   Real skills people can add, share and hire nearby.
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm text-slate-500">
-                  Search through listings from the community. Tum jo skill create karoge, woh yahan dikhegi.
+                  Search through listings from the community. Any skill you create will appear here.
                 </p>
               </div>
               <div className="mt-4 flex flex-col gap-3 md:mt-0 md:items-end">
@@ -357,7 +357,7 @@ export default function Search() {
                     No skill matches this filter.
                   </p>
                   <p className="text-sm">
-                    Search ko simple rakho ya category reset karo. Skill names short aur clear honge to discoverability bhi better hogi.
+                    Keep the search simple or reset the category. Short, clear skill names improve discoverability.
                   </p>
                 </div>
               )}

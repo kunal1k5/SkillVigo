@@ -187,7 +187,7 @@ export default function SkillDetailsPanel({ skill }) {
         <div style={{ display: 'grid', gap: '6px' }}>
           <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Next steps</h3>
           <p style={{ margin: 0, color: 'rgba(248, 250, 252, 0.72)', lineHeight: 1.6 }}>
-            Nearby skill dekho, chat karo, fit ho to booking ki taraf move karo.
+            Review nearby skills, start a chat, and move to booking when it is a good fit.
           </p>
         </div>
 

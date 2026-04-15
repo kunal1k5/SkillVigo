@@ -344,7 +344,7 @@ export default function SearchPage() {
       const matchesDistance =
         selectedMode === 'online'
           ? true
-          : typeof skill.distanceKm === 'number' && skill.distanceKm <= maxDistance;
+          : typeof skill.distanceKm !== 'number' || skill.distanceKm <= maxDistance;
       const matchesSearch = deferredSearchTerm
         ? buildSearchHaystack(skill).includes(deferredSearchTerm)
         : true;

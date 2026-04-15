@@ -165,7 +165,7 @@ export default function CreateSkill() {
       const createdSkill = await createSkill(payload);
       setSavedSkill(createdSkill);
       setStatusMessage(
-        `${createdSkill.title} is live now. Search page par refresh ke baad sab users ko listing dikhegi.`,
+        `${createdSkill.title} is live now. After a refresh on the search page, the listing will be visible to users.`,
       );
     } catch (requestError) {
       setErrorMessage(requestError.message);
@@ -201,8 +201,8 @@ export default function CreateSkill() {
                     Publish a clear skill listing people can trust instantly.
                   </h1>
                   <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-[15px]">
-                    Is page ka flow backend schema ke saath aligned hai, isliye form submit predictable rahega aur
-                    listing search feed me sahi render hogi.
+                    This page flow is aligned with the backend schema, so form submission stays predictable and the
+                    listing renders correctly in the search feed.
                   </p>
                 </div>
 
@@ -260,7 +260,7 @@ export default function CreateSkill() {
                 <section className="grid gap-2 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-[0_16px_32px_rgba(15,118,110,0.08)]">
                   <strong style={{ color: '#0f766e', fontSize: '1.05rem' }}>Skill saved in backend</strong>
                   <p style={{ margin: 0, color: '#115e59', lineHeight: 1.7 }}>
-                    {savedSkill.title} API ke through save ho chuki hai. Search page se isse verify kar sakte ho.
+                    {savedSkill.title} has been saved through the API. You can verify it from the search page.
                   </p>
                 </section>
               ) : null}
@@ -278,7 +278,7 @@ export default function CreateSkill() {
                     Live preview
                   </h2>
                   <p style={{ margin: 0, color: '#475569', lineHeight: 1.6 }}>
-                    Log tumhari skill ko roughly aise dekhenge.
+                    People will see your skill roughly like this.
                   </p>
                 </div>
 
@@ -289,7 +289,7 @@ export default function CreateSkill() {
                 <div style={{ display: 'grid', gap: '6px' }}>
                   <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem' }}>Good starter skill names</h3>
                   <p style={{ margin: 0, color: '#475569', lineHeight: 1.6 }}>
-                    Yahan se idea le lo, baad me real users apne titles khud daalenge.
+                    Use these as ideas. Real users will create their own titles later.
                   </p>
                 </div>
 
@@ -312,7 +312,7 @@ export default function CreateSkill() {
                 <div style={{ display: 'grid', gap: '6px' }}>
                   <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Quick naming guide</h3>
                   <p style={{ margin: 0, color: 'rgba(248, 250, 252, 0.72)', lineHeight: 1.6 }}>
-                    Title ko vague mat rakho. Clear skill + use case likho.
+                    Avoid vague titles. Write a clear skill plus use case.
                   </p>
                 </div>
 

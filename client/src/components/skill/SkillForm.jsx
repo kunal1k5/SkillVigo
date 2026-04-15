@@ -104,8 +104,8 @@ export default function SkillForm({ onSubmit, onDataChange, initialData }) {
             Add your local skill
           </h2>
           <p style={{ margin: 0, color: '#475569', lineHeight: 1.65 }}>
-            Clean details do cheezein improve karti hain: backend validation pass hoti hai aur search page par listing
-            easily samajh aati hai.
+            Clean details improve two things: backend validation passes, and the listing is easier to understand on
+            the search page.
           </p>
         </div>
 
