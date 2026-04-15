@@ -119,12 +119,12 @@ function SuggestionField({ label, name, value, onChange, required, icon, options
   const datalistId = `${name}-options`;
 
   return (
-    <label className="flex flex-col gap-2">
+    <label className="flex min-w-0 flex-col gap-2">
       <span className="text-sm font-semibold text-slate-700">
         {label}
         {required ? <span className="ml-1 text-emerald-600">*</span> : null}
       </span>
-      <div className="group flex h-14 items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-emerald-300 focus-within:bg-emerald-50/40 focus-within:shadow-md">
+      <div className="group flex h-14 min-w-0 items-center overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-emerald-300 focus-within:bg-emerald-50/40 focus-within:shadow-md">
         {icon ? (
           <span className="mr-3 text-slate-400 transition-colors group-focus-within:text-emerald-600">
             {icon}
@@ -138,7 +138,7 @@ function SuggestionField({ label, name, value, onChange, required, icon, options
           placeholder={placeholder}
           required={required}
           list={options.length ? datalistId : undefined}
-          className="h-full flex-1 border-none bg-transparent text-[15px] text-slate-900 focus:outline-none focus:ring-0"
+          className="h-full min-w-0 flex-1 appearance-none border-none bg-transparent pr-2 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
         />
       </div>
       {options.length ? (
@@ -605,7 +605,7 @@ export default function RegisterPage() {
                   </span>
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-3">
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   <SuggestionField
                     label="Country"
                     name="country"
@@ -626,16 +626,18 @@ export default function RegisterPage() {
                     options={stateOptions}
                     placeholder={formData.country ? 'Choose or type state' : 'Type state'}
                   />
-                  <SuggestionField
-                    label="City"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    required={false}
-                    icon={Icons.mapPin}
-                    options={cityOptions}
-                    placeholder={formData.state ? 'Choose or type city' : 'Type city'}
-                  />
+                  <div className="sm:col-span-2 lg:col-span-1">
+                    <SuggestionField
+                      label="City"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      required={false}
+                      icon={Icons.mapPin}
+                      options={cityOptions}
+                      placeholder={formData.state ? 'Choose or type city' : 'Type city'}
+                    />
+                  </div>
                 </div>
 
                 <TextAreaField
